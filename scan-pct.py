@@ -250,10 +250,17 @@ def card_finder_js(names: List[str]) -> str:
 
   // Check if names were provided from Python script
   const providedNames = {names};
+
   if (!providedNames.length > 0) {{
     console.error('No names provided from Python script.');
     return;
   }}
+
+  const peopleCardData = providedNames.map((name) => ({{
+    name,
+    found: false,
+    headshotImgString: null,
+  }}));
 
   // --- Helpers ---
   const sanitizeName = (name) =>
@@ -294,7 +301,7 @@ def card_finder_js(names: List[str]) -> str:
       console.log('Waiting for userReady to be true...');
       while (!window.userReady && num_waits < 12) {{
         console.log('Waiting...');
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 5000));
         num_waits++;
       }}
       console.log('userReady is now true.');
@@ -302,7 +309,7 @@ def card_finder_js(names: List[str]) -> str:
     }}
     for (let i = seconds; i > 0; i--) {{
       console.log(`Moving to next provider in ${{i}}...`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }}
   }}
 
@@ -468,7 +475,8 @@ def card_finder_js(names: List[str]) -> str:
         console.log('Clicking node:', span.textContent);
       }}
       span.click();
-      await countdown(0);
+      await countdown(1);
+      console.log('Out of clickFirstRegex 💰💰💰💰💰');
       return true;
     }} else {{
       console.warn('no span to click for regex match');
@@ -476,70 +484,107 @@ def card_finder_js(names: List[str]) -> str:
     }}
   }}
 
-    for (const personName of providedNames) {{
+  function getHeadshotImageString(searchRoot = document) {{
+    // Find the span whose text contains "Headshot Image" (non-strict match)
+    const targetSpan = Array.from(searchRoot.querySelectorAll('span')).find(
+      (span) => (span.textContent || '').includes('Headshot Image')
+    );
+
+    let val;
+
+    if (targetSpan) {{
+      // Step 1: get the parent of that span
+      const parent = targetSpan.parentElement;
+      // Step 2: get the next sibling element
+      const sibling = parent?.nextElementSibling;
+      // Step 3: find the input inside that sibling
+      const input = sibling?.querySelector('input');
+      // Step 4: get the value attribute
+      val = input?.getAttribute('value');
+    }} else {{
+      console.warn("No span containing 'Headshot Image' found.");
+    }}
+    return val;
+  }}
+
+  for (const person of peopleCardData) {{
+    try {{
+      // 1) Parse, compute path
+      const {{ first, last }} = parsePersonName(person.name);
+      const {{ letterFolder, rangeFolder }} = computeLetterAndRange(last);
+      const expandNames = [...BASE_PATH, letterFolder, rangeFolder];
+
+      // 2) Expand down to the range folder
+      let currentSearchRoot = document;
+      for (const name of expandNames) {{
+        const expandedNode = await expand(name, currentSearchRoot);
+        currentSearchRoot = expandedNode; // scope subsequent searches
+      }}
+
+      // 3) Try exact, then fallbacks
+      const exactRe = buildExactRegex(last, first);
+      const lastPlusInitialRe = buildLastPlusFirstInitialRegex(last, first);
+      const lastOnlyRe = buildLastOnlyRegex(last);
+      const firstLetterRe = buildFirstLetterRegex(last);
+
+      // exact
       try {{
-          // 1) Parse, compute path
-          const {{ first, last }} = parsePersonName(personName);
-          const {{ letterFolder, rangeFolder }} = computeLetterAndRange(last);
-          const expandNames = [...BASE_PATH, letterFolder, rangeFolder];
-
-          // 2) Expand down to the range folder
-          let currentSearchRoot = document;
-          for (const name of expandNames) {{
-            const expandedNode = await expand(name, currentSearchRoot);
-            currentSearchRoot = expandedNode; // scope subsequent searches
-          }}
-
-          // 3) Try exact, then fallbacks
-          const exactRe = buildExactRegex(last, first);
-          const lastPlusInitialRe = buildLastPlusFirstInitialRegex(last, first);
-          const lastOnlyRe = buildLastOnlyRegex(last);
-          const firstLetterRe = buildFirstLetterRegex(last);
-
-          // exact
-          try {{
-            if (await clickFirstRegex(exactRe, currentSearchRoot, 3000)) continue;
-          }} catch (e) {{
-            if (myDebug < myDebugLevels.WARN)
-              console.log('Exact match timed out, trying fallbacks...', e.message);
-          }}
-
-          // last + first initial
-          try {{
-            if (await clickFirstRegex(lastPlusInitialRe, currentSearchRoot, 2000))
-              continue;
-          }} catch (e) {{
-            if (myDebug < myDebugLevels.WARN)
-              console.log('Last+FirstInitial timed out, next fallback...', e.message);
-          }}
-
-          // last name only
-          try {{
-            if (await clickFirstRegex(lastOnlyRe, currentSearchRoot, 2000)) continue;
-          }} catch (e) {{
-            if (myDebug < myDebugLevels.WARN)
-              console.log('Last-only timed out, final fallback...', e.message);
-          }}
-
-          // first letter (this should always exist within the range)
-          try {{
-            if (await clickFirstRegex(firstLetterRe, currentSearchRoot, 2000)) continue;
-          }} catch (e) {{ 
-            console.warn(
-              'First-letter fallback timed out; nothing clickable matched expected patterns.'
-            );
-          }}
-        }} catch (e) {{
-          console.error(e);
+        if (await clickFirstRegex(exactRe, currentSearchRoot, 3000)) {{
+          person.found = true;
+          c = getHeadshotImageString();
+          person.headshotImgString = c;
+          continue;
         }}
-    }};
+      }} catch (e) {{
+        if (myDebug < myDebugLevels.WARN)
+          console.log('Exact match timed out, trying fallbacks...', e.message);
+      }}
+
+      // last + first initial
+      try {{
+        if (await clickFirstRegex(lastPlusInitialRe, currentSearchRoot, 2000))
+          continue;
+      }} catch (e) {{
+        if (myDebug < myDebugLevels.WARN)
+          console.log(
+            'Last+FirstInitial timed out, next fallback...',
+            e.message
+          );
+      }}
+
+      // last name only
+      try {{
+        if (await clickFirstRegex(lastOnlyRe, currentSearchRoot, 2000))
+          continue;
+      }} catch (e) {{
+        if (myDebug < myDebugLevels.WARN)
+          console.log('Last-only timed out, final fallback...', e.message);
+      }}
+
+      // first letter (this should always exist within the range)
+      try {{
+        if (await clickFirstRegex(firstLetterRe, currentSearchRoot, 2000))
+          continue;
+      }} catch (e) {{
+        console.warn(
+          'First-letter fallback timed out; nothing clickable matched expected patterns.'
+        );
+      }}
+    }} catch (e) {{
+      console.error(e);
+    }}
+  }}
+  console.log('People card data results:', peopleCardData);
+  return peopleCardData;
 }})();
+
 """
     return js_template.format(names=json.dumps(names))
 
 
 if __name__ == "__main__":
     names = main()
+    print(f"Names to search for: {names}!!!!!!!!\n")
 
     js = card_finder_js(names)  # generate JS snippet
 
