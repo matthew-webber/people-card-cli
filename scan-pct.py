@@ -631,15 +631,3 @@ if __name__ == "__main__":
         print("Here is the JavaScript snippet:")
         print()
         print(js)
-    # wait for the user to paste back in the JS object of people card data and then print it out neatly to the user
-    js_obj_str = input(
-        "\nPaste back the JavaScript object of people card data here, then press Enter:\n"
-    )
-    try:
-        js_obj = json.loads(js_obj_str)
-        print("\nParsed people card data:")
-        print(json.dumps(js_obj, indent=2))
-    except json.JSONDecodeError as e:
-        print(f"Error parsing JSON: {e}")
-        print("Raw input was:")
-        print(js_obj_str)
