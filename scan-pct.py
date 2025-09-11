@@ -1,3 +1,5 @@
+# TODO: create a new command that integrates
+
 #!/usr/bin/env python3
 """
 Find matches in the latest pct-*.xlsx based on names in names.txt.
@@ -91,16 +93,43 @@ def tokenize_name(name: str) -> Tuple[str, Optional[str], str]:
       - Anything in between contributes a middle initial: first letter of the first middle token.
       - Tokens consisting of a single letter (with/without period) are treated as middle initials.
     """
-    # Remove stray punctuation that’s not helpful for name parsing
+    # print(f"Debug: original name: '{name}'")  # Debug print
+
+    quote_replaced_name = name.replace("“", '"').replace("”", '"')
+
+    # Remove stray punctuation (except for double quotes and curly quotes) that’s not helpful for name parsing
+    cleaned = re.sub(r"""[^"\w\s\-\.' ]""", " ", quote_replaced_name)
+
+    # print(f"Debug: cleaned name: '{cleaned}'")  # Debug print
+
+    # Remove suffixes like Jr., Sr., III, etc. at the end
     cleaned = re.sub(
-        r"[^\w\s\-\.']", " ", name
-    )  # allow letters/digits, whitespace, hyphen, dot, apostrophe
+        r"\b(Jr|Sr|II|III|IV|V|MD|PhD|Esq)\.?\s*$", "", cleaned, flags=re.IGNORECASE
+    )
+
     parts = [p for p in re.split(r"\s+", cleaned.strip()) if p]
+    # print(f"Debug: tokenized parts: {parts}")  # Debug print
     if len(parts) < 2:
         # If we can't parse, fall back to using the whole thing as first name
         return (parts[0], None, "") if parts else ("", None, "")
 
-    first = parts[0]
+    # if one of the parts has double quotes, assume that part is the first name (i.e. nicknames)
+    for p in parts:
+        if '"' in p:
+            match = re.search(r'"(.*?)"', p)
+            if match:
+                first = match.group(1)
+                break
+        # if the first part is a single letter (with/without period), assume the next part is first name
+        if re.match(r"^[A-Za-z]\.?$", parts[0]):
+            if len(parts) > 1:
+                first = parts[1]
+            else:
+                first = parts[0]
+            break
+    else:
+        first = parts[0]
+
     last = parts[-1]
     middle_tokens = parts[1:-1]
 
@@ -221,9 +250,9 @@ def main():
         key_display = " OR ".join(variants) if variants else "(unparsable)"
         if found_rows:
             total_found += 1
-            print(f"[MATCH] {name} -> {key_display}  |  Rows: {found_rows}")
+            print(f"[✅] {name} -> {key_display}  |  Rows: {found_rows}")
         else:
-            print(f"[MISS ] {name} -> {key_display}")
+            print(f"[❌] {name} -> {key_display}")
 
     print()
     print(f"Done. {total_found}/{len(names)} had at least one match in Column A.")
@@ -575,6 +604,8 @@ def card_finder_js(names: List[str]) -> str:
     }}
   }}
   console.log('People card data results:', peopleCardData);
+  // save results to clipboard
+  navigator.clipboard.writeText(JSON.stringify(peopleCardData, null, 2));
   return peopleCardData;
 }})();
 
@@ -600,3 +631,15 @@ if __name__ == "__main__":
         print("Here is the JavaScript snippet:")
         print()
         print(js)
+    # wait for the user to paste back in the JS object of people card data and then print it out neatly to the user
+    js_obj_str = input(
+        "\nPaste back the JavaScript object of people card data here, then press Enter:\n"
+    )
+    try:
+        js_obj = json.loads(js_obj_str)
+        print("\nParsed people card data:")
+        print(json.dumps(js_obj, indent=2))
+    except json.JSONDecodeError as e:
+        print(f"Error parsing JSON: {e}")
+        print("Raw input was:")
+        print(js_obj_str)
