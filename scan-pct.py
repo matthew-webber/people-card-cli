@@ -1,4 +1,4 @@
-# TODO: create a new command that integrates
+# TODO: move this to the commands directory as 'scan' command and integrate into main CLI
 
 #!/usr/bin/env python3
 """
