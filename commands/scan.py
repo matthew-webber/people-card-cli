@@ -436,15 +436,15 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     return headshotImgStr || null;
   }}
 
-  const conditionallyModifyPeopleCardData = async (person) => {{
-    if (window.pFound === true) {{
-        person.found = true;
-        person.headshotImgString = await getHeadshotImageString();
-      }} else {{
-        console.log('Skipping headshot grab as pFound is not true.');
-      }}
-    }};
-
+  const getPeopleCardName = async () => {{
+    let pCardName = null;
+    const scContentTreeNodeActive = document.querySelector('.scContentTreeNodeActive');
+    if (scContentTreeNodeActive) {{
+        pCardName = scContentTreeNodeActive.textContent.trim();
+    }}
+    return pCardName;
+  }}
+      
   for (const person of peopleCardData) {{
     try {{
       // 1) Parse and validate the person's name
@@ -473,6 +473,7 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
       // Helper function to attempt a match and update person data if successful
       async function attemptMatch(person, scope, regex, timeout) {{
         try {{
+          // TODO figure out where the bug is that's causing setting `window.pFound = false` to then need it to be set to true again to grab the headshot on any subsequent people
           const clicked = await clickRegexMatch(regex, timeout);
           if (clicked && scope !== 'exact') {{
             await countdown(0);
@@ -480,6 +481,7 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
 
           if (window.pFound) {{
             person.found = true;
+            person.pCardName = await getPeopleCardName();
             person.headshotImgString = await getHeadshotImageString();
             return true;
           }} else {{
@@ -595,11 +597,11 @@ def cmd_scan(args, state=None):
     )
 
     value_to_rows = {}
-    for idx, val in colA_norm.items():
+    # Enumerate the normalized Series values to get a guaranteed integer position (1-based Excel row number)
+    for pos, val in enumerate(colA_norm.tolist(), start=1):
         if not val:
             continue
-        excel_row = idx + 1
-        value_to_rows.setdefault(val, []).append(excel_row)
+        value_to_rows.setdefault(val, []).append(pos)
 
     total_found = 0
     for name in names:
