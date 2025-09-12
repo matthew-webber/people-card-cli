@@ -137,19 +137,23 @@ def _load_column_a_as_keys(xlsx_path: str) -> pd.Series:
     colA = df.iloc[:, 0].fillna("").astype(str)
 
     def normalize_cell(s: str) -> str:
+        # remove periods
         s = s.replace(".", "")
+        # normalize whitespace, lowercase
         s = re.sub(r"\s+", " ", s.strip().lower())
+        # remove -#### suffixes
+        s = re.sub(r"-\d{4}$", "", s)
         return s
 
     return colA.apply(normalize_cell)
 
 
-def _card_finder_js(names: List[str]) -> str:
+def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     js_template = r"""
 // JavaScript snippet to find a person card by name on a webpage
 (async () => {{
   // --- DEBUG SETUP ---
-  myDebug = 2;
+  myDebug = 1;
   myDebugLevels = {{
     DEBUG: 1,
     INFO: 2,
@@ -207,17 +211,21 @@ def _card_finder_js(names: List[str]) -> str:
   }}
 
   async function countdown(seconds) {{
-    // if seconds === 0, wait until window.userReady === true
+    // if seconds === 0, wait until window.pFound === true
     if (seconds === 0) {{
-      window.userReady = false;
+      window.pFound = null;
       let num_waits = 0;
-      console.log('Waiting for userReady to be true...');
-      while (!window.userReady && num_waits < 12) {{
+      console.log('Waiting (up to 30s) for window.pFound to be true...');
+      console.log('***DIRECTIONS***');
+      console.log('1. Set window.pFound = true in the console to grab the headshot string.');
+      console.log('2. If person not found, set window.pFound = false to skip.');
+      console.log('3. If nothing happens after 30s, the script will continue automatically.');
+      while (window.pFound === null && num_waits < 10) {{
         console.log('Waiting...');
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         num_waits++;
       }}
-      console.log('userReady is now true.');
+      console.log('pFound is now true.');
       return;
     }}
     for (let i = seconds; i > 0; i--) {{
@@ -299,21 +307,6 @@ def _card_finder_js(names: List[str]) -> str:
           console.warn('no span for', name);
           return false;
         }}
-        if (myDebug < myDebugLevels.INFO) {{
-          console.log('span', span, 'textContent', span.textContent);
-          console.log(
-            'SANITIZED span.textContent:',
-            sanitizeName(span.textContent),
-            'target:',
-            target
-          );
-          console.log(
-            'checking "sanitizeName(span.textContent) === target":',
-            sanitizeName(span.textContent),
-            '===',
-            target
-          );
-        }}
         return span && sanitizeName(span.textContent) === target;
       }}
     );
@@ -359,7 +352,7 @@ def _card_finder_js(names: List[str]) -> str:
       const txt = (span.textContent || '').trim();
       const ok = regex.test(txt);
       if (myDebug < myDebugLevels.INFO) {{
-        console.log('Testing node text:', txt, 'against', regex, '=>', ok);
+        // console.log('Testing node text:', txt, 'against', regex, '=>', ok);
       }}
       return ok;
     }});
@@ -379,7 +372,7 @@ def _card_finder_js(names: List[str]) -> str:
     }});
   }}
 
-  async function clickFirstRegex(regex, searchRoot = document, timeout = 2500) {{
+  async function clickFirstRegex(scope, regex, searchRoot = document, timeout = 2500) {{
     const matches = await waitForRegex(regex, searchRoot, timeout);
     const node = matches[0];
     const span = node.querySelector('span');
@@ -388,7 +381,7 @@ def _card_finder_js(names: List[str]) -> str:
         console.log('Clicking node:', span.textContent);
       }}
       span.click();
-      await countdown(0);
+      if (scope !== 'exact') {{console.log('scope is', scope); await countdown(0);}}
       return true;
     }} else {{
       console.warn('no span to click for regex match');
@@ -396,7 +389,11 @@ def _card_finder_js(names: List[str]) -> str:
     }}
   }}
 
-  function getHeadshotImageString(searchRoot = document) {{
+  async function getHeadshotImageString(searchRoot = document) {{
+    let val = null;
+    // Step 0: pause briefly to allow UI to update
+    console.log('🐢 Waiting 1.5s for UI to update...');
+    await new Promise((r) => setTimeout(r, 1500));
     // Find the span whose text contains "Headshot Image" (non-strict match)
     const targetSpan = Array.from(searchRoot.querySelectorAll('span')).find(
       (span) => (span.textContent || '').includes('Headshot Image')
@@ -417,10 +414,19 @@ def _card_finder_js(names: List[str]) -> str:
     return val || null;
   }}
 
+  const conditionallyModifyPeopleCardData = async () => {{
+    if (window.pFound === true) {{
+        person.found = true;
+        person.headshotImgString = await getHeadshotImageString(currentSearchRoot);
+      }} else {{
+        console.log('Skipping headshot grab as pFound is not true.');
+      }}
+    }};
+
   for (const person of peopleCardData) {{
     try {{
       // 1) Parse, compute path
-      const {{ first, last }} = parsePersonName(person.name);
+      const [first, last] = person.name;
       if (myDebug < myDebugLevels.WARN) console.log(`Searching for: ${{person.name}} => first: ${{first}}, last: ${{last}}`);
       if (!first || !last) {{
         console.warn('Skipping unparsable name:', person.name);
@@ -436,15 +442,15 @@ def _card_finder_js(names: List[str]) -> str:
         currentSearchRoot = expandedNode; // scope subsequent searches
       }}
 
-      // 3) Try exact, then fallbacks
+      // regexes
       const exactRe = buildExactRegex(last, first);
       const lastPlusInitialRe = buildLastPlusFirstInitialRegex(last, first);
       const lastOnlyRe = buildLastOnlyRegex(last);
       const firstLetterRe = buildFirstLetterRegex(last);
 
-      // exact
+      // 3) Try to find exact match first
       try {{
-        if (await clickFirstRegex(exactRe, currentSearchRoot, 3000)) {{
+        if (await clickFirstRegex('exact', exactRe, currentSearchRoot, 3000)) {{
           person.found = true;
           person.headshotImgString = getHeadshotImageString(currentSearchRoot);
           continue;
@@ -454,9 +460,15 @@ def _card_finder_js(names: List[str]) -> str:
           console.warn('Exact match timed out, trying fallbacks...', e.message);
       }}
 
-      // last + first initial
+      // 4) Fallbacks:
+      //   last+first initial,
+      //   last only,
+      //   first letter of last name
+
+      // last name + first initial
       try {{
-        if (await clickFirstRegex(lastPlusInitialRe, currentSearchRoot, 2000))
+        if (await clickFirstRegex('last_first_initial', lastPlusInitialRe, currentSearchRoot, 2000))
+          conditionallyModifyPeopleCardData();
           continue;
       }} catch (e) {{
         if (myDebug < myDebugLevels.WARN)
@@ -468,7 +480,8 @@ def _card_finder_js(names: List[str]) -> str:
 
       // last name only
       try {{
-        if (await clickFirstRegex(lastOnlyRe, currentSearchRoot, 2000))
+        if (await clickFirstRegex('lastname_only', lastOnlyRe, currentSearchRoot, 2000))
+          conditionallyModifyPeopleCardData();
           continue;
       }} catch (e) {{
         if (myDebug < myDebugLevels.WARN)
@@ -477,7 +490,8 @@ def _card_finder_js(names: List[str]) -> str:
 
       // first letter (this should always exist within the range)
       try {{
-        if (await clickFirstRegex(firstLetterRe, currentSearchRoot, 2000))
+        if (await clickFirstRegex('first_letter_lastname', firstLetterRe, currentSearchRoot, 2000))
+          conditionallyModifyPeopleCardData();
           continue;
       }} catch (e) {{
         console.warn(
@@ -542,6 +556,13 @@ def cmd_scan(args, state=None):
             print(f"[❌] {name} -> {key_display}")
 
     print(f"\nDone. {total_found}/{len(names)} had at least one match in Column A.")
+
+    names = [
+        (first, last)
+        for name in names
+        if (first := _tokenize_name(name)[0]) and (last := _tokenize_name(name)[2])
+    ]
+    print(f"\nNames are: names = {names}\n")
 
     js = _card_finder_js(names)
     try:
