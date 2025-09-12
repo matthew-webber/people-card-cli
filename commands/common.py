@@ -25,6 +25,7 @@ def print_help_for_command(command, state):
 def cmd_help(args, state):
     print("\nPEOPLE CARD CLI - COMMAND REFERENCE")
     print("  report [--force] [<domain> <row1> [row2 ...]]")
+    print("  scan              # scan latest pct-*.xlsx using names.txt")
     print("  bulk_check [csv_filename]")
     print("  help [command]")
     print("  exit, quit")
