@@ -410,9 +410,6 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
 
   async function getHeadshotImageString() {{
     let headshotImgStr = null;
-    // Step 0: pause briefly to allow UI to update
-    console.log('🐢 Waiting 1.5s for UI to update...');
-    await new Promise((r) => setTimeout(r, 1500));
     // Find the span whose text contains "Headshot Image" (non-strict match)
     const targetSpan = Array.from(document.querySelectorAll('span')).find(
       (span) => (span.textContent || '').includes('Headshot Image')
@@ -436,7 +433,7 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     return headshotImgStr || null;
   }}
 
-  const getPeopleCardName = async () => {{
+  const getPeopleCardName = () => {{
     let pCardName = null;
     const scContentTreeNodeActive = document.querySelector('.scContentTreeNodeActive');
     if (scContentTreeNodeActive) {{
@@ -473,15 +470,25 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
       // Helper function to attempt a match and update person data if successful
       async function attemptMatch(person, scope, regex, timeout) {{
         try {{
-          // TODO figure out where the bug is that's causing setting `window.pFound = false` to then need it to be set to true again to grab the headshot on any subsequent people
+          // Fix: avoid stale window.pFound impacting subsequent matches.
+          // - For 'exact' scope: if we clicked a match, treat as found immediately.
+          // - For other scopes: wait for manual confirmation via countdown() and check window.pFound.
           const clicked = await clickRegexMatch(regex, timeout);
-          if (clicked && scope !== 'exact') {{
-            await countdown(0);
+          if (!clicked) return false;
+
+          if (scope === 'exact') {{
+            await new Promise((r) => setTimeout(r, 500));
+            person.found = true;
+            person.pCardName = getPeopleCardName();
+            person.headshotImgString = await getHeadshotImageString();
+            return true;
           }}
 
-          if (window.pFound) {{
+          await countdown(0); // resets window.pFound to null and waits for user input
+          if (window.pFound === true) {{
+            await new Promise((r) => setTimeout(r, 500)); // waiting for the UI to update...
             person.found = true;
-            person.pCardName = await getPeopleCardName();
+            person.pCardName = getPeopleCardName();
             person.headshotImgString = await getHeadshotImageString();
             return true;
           }} else {{
@@ -849,6 +856,10 @@ def _process_received_data(data, state=None):
 def _export_scan_results_to_excel(state):
     """Write the scan_export_rows to an Excel file."""
     rows = getattr(state, "scan_export_rows", [])
+
+    domain = state.get_variable("DOMAIN") if state else "domain"
+    row = state.get_variable("ROW") if state else "row"
+
     if not rows:
         print("⚠️  No export rows available.")
         return
@@ -863,10 +874,9 @@ def _export_scan_results_to_excel(state):
     df = pd.DataFrame(
         rows, columns=["Name (PCT)", "Full Name", "Headshot String", "Name (Sitecore)"]
     )
-    exports_dir = Path("reports")
+    exports_dir = Path("people_reports")
     exports_dir.mkdir(exist_ok=True)
-    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    fname = exports_dir / f"scan_export_{ts}.xlsx"
+    fname = exports_dir / f"{domain}_{row}.xlsx"
     try:
         df.to_excel(fname, index=False)
         print(f"✅ Export written: {fname}")
