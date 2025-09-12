@@ -28,6 +28,11 @@ class CLIState:
         self.excel_data = None
         self.current_page_data = None
 
+        # New containers for scan/export workflow
+        self.scan_pct_map = {}  # (first_lower,last_lower) -> set of PCT raw keys
+        self.scan_original_fullnames = []  # list of original full name strings
+        self.scan_export_rows = []  # list of dict rows ready for export
+
         # Variables that should be returned as booleans
         self.boolean_variables = {"INCLUDE_SIDEBAR", "DEBUG"}
 

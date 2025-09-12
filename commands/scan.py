@@ -604,17 +604,31 @@ def cmd_scan(args, state=None):
         value_to_rows.setdefault(val, []).append(pos)
 
     total_found = 0
+    # After loading names, preserve original list for merging later
+    if state is not None:
+        state.scan_original_fullnames = list(names)
+        state.scan_pct_map = {}
+        state.scan_export_rows = []
+    # Matching loop
     for name in names:
         variants = _key_variants_from_name(name)
         found_rows = []
+        matched_pct_keys = set()
         for v in variants:
             if v in value_to_rows:
                 found_rows.extend(value_to_rows[v])
+                # Reconstruct approximate PCT raw key base (v) for mapping
+                matched_pct_keys.add(v)
         found_rows = sorted(set(found_rows))
         key_display = " OR ".join(variants) if variants else "(unparsable)"
         if found_rows:
             total_found += 1
             print(f"[✅] {name} -> {key_display}  |  Rows: {found_rows}")
+            if state is not None:
+                first, _, last = _tokenize_name(name)
+                k = (first.lower(), last.lower())
+                bucket = state.scan_pct_map.setdefault(k, set())
+                bucket.update(matched_pct_keys)
         else:
             print(f"[❌] {name} -> {key_display}")
 
@@ -664,8 +678,8 @@ def cmd_scan(args, state=None):
                 break
 
         if pasted_lines:
-            # Process the pasted data
-            _process_pasted_data(pasted_lines)
+            # Process the pasted data (pass state explicitly)
+            _process_pasted_data(pasted_lines, state)
         else:
             print("⚠️  No data provided")
 
@@ -675,7 +689,7 @@ def cmd_scan(args, state=None):
         print("\n🏁 Scan command completed")
 
 
-def _process_pasted_data(lines):
+def _process_pasted_data(lines, state=None):
     """Process and display pasted delimited people card data."""
     print("\n" + "=" * 60)
     print("📊 PROCESSING PASTED PEOPLE CARD DATA")
@@ -737,13 +751,19 @@ def _process_pasted_data(lines):
 
     # Process the parsed data using existing function
     if parsed_people:
-        _process_received_data(parsed_people)
+        _process_received_data(parsed_people, state=state)
     else:
         print("❌ No valid data could be parsed from the input")
 
 
-def _process_received_data(data):
-    """Process and display the received people card data."""
+def _process_received_data(data, state=None):
+    """Process and display the received people card data.
+
+    state: optional CLIState instance explicitly passed from caller. Passing explicitly
+    avoids brittle reliance on global lookups that could fail depending on invocation context.
+    """
+    active_state = state
+
     print("\n" + "=" * 60)
     print("📊 RECEIVED PEOPLE CARD DATA")
     print("=" * 60)
@@ -763,21 +783,92 @@ def _process_received_data(data):
     print(f"   People not found: {total_people - found_count}")
 
     print(f"\n📋 DETAILED RESULTS:")
+    export_rows = []
+
     for i, person in enumerate(data, 1):
-        name = person.get("name", ["Unknown", "Unknown"])
+        name = person.get("name", ["Unknown", "Unknown"])  # [first,last]
         found = person.get("found", False)
         headshot = person.get("headshotImgString")
+        pcard = person.get("pCardName")
+
+        first = name[0] if isinstance(name, list) and len(name) > 0 else ""
+        last = name[1] if isinstance(name, list) and len(name) > 1 else ""
+        key = (first.lower(), last.lower())
+        pct_keys = []
+        if active_state is not None and hasattr(active_state, "scan_pct_map"):
+            pct_keys = sorted(active_state.scan_pct_map.get(key, []))
 
         status = "✅ FOUND" if found else "❌ NOT FOUND"
-        name_display = (
-            f"{name[0]} {name[1]}"
-            if isinstance(name, list) and len(name) >= 2
-            else str(name)
-        )
-
+        name_display = f"{first} {last}".strip()
         print(f"   {i:2d}. {status} - {name_display}")
+        if pct_keys:
+            print(f"       🔑 PCT Keys: {', '.join(pct_keys)}")
         if found and headshot:
-            headshot_preview = headshot[:50] + "..." if len(headshot) > 50 else headshot
+            headshot_preview = headshot[:70] + ("..." if len(headshot) > 70 else "")
             print(f"       🖼️  Headshot: {headshot_preview}")
+        if pcard:
+            print(f"       📛 Sitecore Name: {pcard}")
+
+        # Build export rows (one row per PCT key if present, else one placeholder row)
+        if pct_keys:
+            for pct_key in pct_keys:
+                export_rows.append(
+                    {
+                        "Name (PCT)": pct_key,
+                        "Full Name": name_display,
+                        "Headshot String": headshot or "",
+                        "Name (Sitecore)": pcard or "",
+                    }
+                )
+        else:
+            export_rows.append(
+                {
+                    "Name (PCT)": "",
+                    "Full Name": name_display,
+                    "Headshot String": headshot or "",
+                    "Name (Sitecore)": pcard or "",
+                }
+            )
 
     print("=" * 60)
+
+    # Store export rows in state for later save
+    if active_state is not None:
+        active_state.scan_export_rows = export_rows
+        print(f"💾 Prepared {len(export_rows)} row(s) for export.")
+        # Offer immediate export only if there are rows
+        if export_rows:
+            try:
+                choice = input("📝 Export to Excel now? [Y/n]: ").strip().lower()
+            except KeyboardInterrupt:
+                choice = "n"
+            if choice in ("", "y", "yes"):
+                _export_scan_results_to_excel(active_state)
+
+
+def _export_scan_results_to_excel(state):
+    """Write the scan_export_rows to an Excel file."""
+    rows = getattr(state, "scan_export_rows", [])
+    if not rows:
+        print("⚠️  No export rows available.")
+        return
+    try:
+        import pandas as pd
+    except ImportError:
+        print("❌ pandas is required to export Excel. Install with: pip install pandas")
+        return
+    import datetime
+    from pathlib import Path
+
+    df = pd.DataFrame(
+        rows, columns=["Name (PCT)", "Full Name", "Headshot String", "Name (Sitecore)"]
+    )
+    exports_dir = Path("reports")
+    exports_dir.mkdir(exist_ok=True)
+    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    fname = exports_dir / f"scan_export_{ts}.xlsx"
+    try:
+        df.to_excel(fname, index=False)
+        print(f"✅ Export written: {fname}")
+    except Exception as e:
+        print(f"❌ Failed to write export: {e}")
