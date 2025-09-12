@@ -23,6 +23,7 @@ class CLIState:
             "PROPOSED_PATH": "",
             "DEBUG": "true",
             "TAXONOMY": "",
+            "EXTRACTED_PEOPLE_LIST": "",
         }
         self.excel_data = None
         self.current_page_data = None
@@ -112,4 +113,5 @@ class CLIState:
         self.variables["KANBAN_ID"] = ""
         self.variables["PROPOSED_PATH"] = ""
         self.variables["TAXONOMY"] = ""
+        self.variables["EXTRACTED_PEOPLE_LIST"] = ""
         debug_print("Variables reset to defaults.")

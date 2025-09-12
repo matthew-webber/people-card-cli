@@ -129,11 +129,13 @@ def get_commands(state):
     from commands.common import cmd_help
     from commands.bulk import cmd_bulk_check
     from commands.scan import cmd_scan
+    from commands.extract import cmd_extract
 
     return {
         "bulk_check": lambda args: cmd_bulk_check(args, state),
         "bulk": lambda args: cmd_bulk_check(args, state),  # Alias for bulk
         "scan": lambda args: cmd_scan(args, state),
+        "extract": lambda args: cmd_extract(args, state),
         "report": lambda args: cmd_report(args, state),
         "show": lambda args: cmd_show(args, state),
         "help": lambda args: cmd_help(args, state),

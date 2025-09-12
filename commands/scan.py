@@ -68,6 +68,26 @@ def _load_and_strip_names(path: str) -> List[str]:
     return stripped
 
 
+def _load_extracted_people_names(path: str) -> List[str]:
+    """Load names from an extracted people list file, ignoring comments."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"{path} not found.")
+
+    names: List[str] = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            raw = line.strip()
+            # Skip empty lines and comments
+            if not raw or raw.startswith("#"):
+                continue
+            # Split on comma and take first part (in case there are credentials)
+            name_only = raw.split(",", 1)[0].strip()
+            if name_only:
+                names.append(name_only)
+
+    return names
+
+
 def _tokenize_name(name: str) -> Tuple[str, Optional[str], str]:
     quote_replaced_name = name.replace("“", '"').replace("”", '"')
     cleaned = re.sub(r"""[^"\w\s\-\.' ]""", " ", quote_replaced_name)
@@ -516,8 +536,24 @@ def cmd_scan(args, state=None):
         print(f"ERROR: {e}", file=sys.stderr)
         return
 
+    # Determine which file to use for names
+    names_file = NAMES_FILE
+    use_extracted = False
+
+    if state:
+        extracted_file = state.get_variable("EXTRACTED_PEOPLE_LIST")
+        if extracted_file and os.path.exists(extracted_file):
+            names_file = extracted_file
+            use_extracted = True
+            print(f"📋 Using extracted people list: {os.path.basename(extracted_file)}")
+        else:
+            print(f"📄 Using default names file: {NAMES_FILE}")
+
     try:
-        names = _load_and_strip_names(NAMES_FILE)
+        if use_extracted:
+            names = _load_extracted_people_names(names_file)
+        else:
+            names = _load_and_strip_names(names_file)
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return
@@ -529,8 +565,9 @@ def cmd_scan(args, state=None):
         return
 
     print(f"Using Excel: {os.path.basename(xlsx_path)}")
+    file_type = "extracted people list" if use_extracted else "names file"
     print(
-        f"Loaded {len(names)} name(s) from {NAMES_FILE} (credentials stripped if present).\n"
+        f"Loaded {len(names)} name(s) from {file_type} (credentials stripped if present).\n"
     )
 
     value_to_rows = {}
