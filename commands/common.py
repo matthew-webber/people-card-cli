@@ -22,6 +22,13 @@ def print_help_for_command(command, state):
         print("Usage: extract [<domain> <row>]")
         print("Generate or open a people list file for current page or specified page.")
         print("Files are saved to ./people/ directory and used by scan command.")
+    elif command == "scan":
+        print("Usage: scan")
+        print(
+            "Scan latest pct-*.xlsx for name matches using names.txt or extracted list."
+        )
+        print("Generates JavaScript snippet for browser console execution.")
+        print("Copy the console output and paste it back into the CLI for processing.")
     else:
         print(f"No help available for {command}.")
 
@@ -29,9 +36,7 @@ def print_help_for_command(command, state):
 def cmd_help(args, state):
     print("\nPEOPLE CARD CLI - COMMAND REFERENCE")
     print("  report [--force] [<domain> <row1> [row2 ...]]")
-    print(
-        "  scan              # scan latest pct-*.xlsx using names.txt or extracted list"
-    )
+    print("  scan              # scan latest pct-*.xlsx and copy/paste data")
     print("  extract [<domain> <row>]  # generate/open people list file for page")
     print("  bulk_check [csv_filename]")
     print("  help [command]")

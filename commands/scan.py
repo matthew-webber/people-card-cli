@@ -13,8 +13,8 @@ import glob
 import os
 import re
 import sys
-from typing import List, Tuple, Optional
 import json
+from typing import List, Tuple, Optional
 
 try:
     import pandas as pd
@@ -523,6 +523,30 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     }}
   }}
   console.log('People card data results:', peopleCardData);
+  
+  // Format data for easy copying to CLI
+  console.log('\\n' + '='.repeat(60));
+  console.log('📋 COPY THE DATA BELOW TO PASTE INTO CLI');
+  console.log('='.repeat(60));
+  
+  // Create delimited format: firstName|lastName|found|headshotImg|pCardName
+  const formattedData = peopleCardData.map(person => {{
+    const firstName = person.name[0] || '';
+    const lastName = person.name[1] || '';
+    const found = person.found ? 'true' : 'false';
+    const headshot = person.headshotImgString || '';
+    const pCardName = person.pCardName || '';
+    
+    // Use semicolon as delimiter and escape any semicolons in the data
+    return [firstName, lastName, found, headshot, pCardName]
+      .map(field => String(field).replace(/;/g, '&#59;'))
+      .join(';');
+  }}).join('\\n');
+  
+  console.log(formattedData);
+  console.log('='.repeat(60));
+  console.log('💡 Copy all the lines above and paste them into the CLI');
+  
   return peopleCardData;
 }})();
 """
@@ -606,8 +630,133 @@ def cmd_scan(args, state=None):
         import pyperclip  # type: ignore
 
         pyperclip.copy(js)
-        print("\nJavaScript snippet copied to clipboard.")
+        print("\n✅ JavaScript snippet copied to clipboard.")
     except Exception:
-        print("\nInstall pyperclip to enable clipboard copy: pip install pyperclip")
+        print("\n⚠️  Install pyperclip to enable clipboard copy: pip install pyperclip")
         print("Here is the JavaScript snippet:\n")
         print(js)
+
+    # Paste input mode
+    print("\n" + "=" * 60)
+    print("📋 PASTE MODE ACTIVATED")
+    print("=" * 60)
+    print("📋 JavaScript has been copied to clipboard")
+    print("🌐 Paste and run it in your browser's developer console")
+    print("📄 Copy the delimited data from the console output")
+    print("📥 Paste it below when prompted")
+    print("🚫 Press Ctrl+C to cancel and return to CLI")
+    print("=" * 60)
+
+    try:
+        print("\n💡 After running the JavaScript, paste the delimited data here:")
+        print("(End with an empty line or Ctrl+D)")
+
+        pasted_lines = []
+        while True:
+            try:
+                line = input()
+                if not line.strip():  # Empty line ends input
+                    break
+                pasted_lines.append(line.strip())
+            except EOFError:  # Ctrl+D
+                break
+
+        if pasted_lines:
+            # Process the pasted data
+            _process_pasted_data(pasted_lines)
+        else:
+            print("⚠️  No data provided")
+
+    except KeyboardInterrupt:
+        print("\n🚫 Operation cancelled by user")
+    finally:
+        print("\n🏁 Scan command completed")
+
+
+def _process_pasted_data(lines):
+    """Process and display pasted delimited people card data."""
+    print("\n" + "=" * 60)
+    print("📊 PROCESSING PASTED PEOPLE CARD DATA")
+    print("=" * 60)
+
+    # Print raw data for sanity check
+    print("🔍 Raw pasted data:")
+    for i, line in enumerate(lines, 1):
+        print(f"  {i:2d}: {line}")
+    print("\n" + "-" * 60)
+
+    # Parse delimited data
+    parsed_people = []
+    for line_num, line in enumerate(lines, 1):
+        try:
+            # Split by semicolon and unescape
+            parts = [part.replace("&#59;", ";") for part in line.split(";")]
+
+            if len(parts) >= 3:
+                first_name = parts[0] if len(parts) > 0 else ""
+                last_name = parts[1] if len(parts) > 1 else ""
+                found = parts[2].lower() == "true" if len(parts) > 2 else False
+                headshot = parts[3] if len(parts) > 3 else ""
+                pcard_name = parts[4] if len(parts) > 4 else ""
+
+                parsed_people.append(
+                    {
+                        "name": [first_name, last_name],
+                        "found": found,
+                        "headshotImgString": headshot if headshot else None,
+                        "pCardName": pcard_name if pcard_name else None,
+                    }
+                )
+            else:
+                print(f"⚠️  Line {line_num} has too few fields, skipping: {line}")
+
+        except Exception as e:
+            print(f"❌ Error parsing line {line_num}: {e}")
+            print(f"   Line content: {line}")
+
+    # Process the parsed data using existing function
+    if parsed_people:
+        _process_received_data(parsed_people)
+    else:
+        print("❌ No valid data could be parsed from the input")
+
+
+def _process_received_data(data):
+    """Process and display the received people card data."""
+    print("\n" + "=" * 60)
+    print("📊 RECEIVED PEOPLE CARD DATA")
+    print("=" * 60)
+
+    # Print raw data for sanity check as requested
+    print("🔍 Raw data received:")
+    print(json.dumps(data, indent=2))
+    print("\n" + "-" * 60)
+
+    # Process and summarize the data
+    total_people = len(data)
+    found_count = sum(1 for person in data if person.get("found", False))
+
+    print(f"📈 SUMMARY:")
+    print(f"   Total people processed: {total_people}")
+    print(f"   People found: {found_count}")
+    print(f"   People not found: {total_people - found_count}")
+
+    print(f"\n📋 DETAILED RESULTS:")
+    for i, person in enumerate(data, 1):
+        name = person.get("name", ["Unknown", "Unknown"])
+        found = person.get("found", False)
+        headshot = person.get("headshotImgString")
+
+        status = "✅ FOUND" if found else "❌ NOT FOUND"
+        name_display = (
+            f"{name[0]} {name[1]}"
+            if isinstance(name, list) and len(name) >= 2
+            else str(name)
+        )
+
+        print(f"   {i:2d}. {status} - {name_display}")
+        if found and headshot:
+            headshot_preview = headshot[:50] + "..." if len(headshot) > 50 else headshot
+            print(f"       🖼️  Headshot: {headshot_preview}")
+
+    print("=" * 60)
