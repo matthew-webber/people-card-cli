@@ -530,7 +530,7 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
   console.log('='.repeat(60));
   
   // Create delimited format: firstName|lastName|found|headshotImg|pCardName
-  const formattedData = peopleCardData.map(person => {{
+  const formattedLines = peopleCardData.map(person => {{
     const firstName = person.name[0] || '';
     const lastName = person.name[1] || '';
     const found = person.found ? 'true' : 'false';
@@ -543,7 +543,7 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
       .join(';');
   }}).join('\\n');
   
-  console.log(formattedData);
+    console.log(formattedLines);
   console.log('='.repeat(60));
   console.log('💡 Copy all the lines above and paste them into the CLI');
   
@@ -685,9 +685,28 @@ def _process_pasted_data(lines):
         print(f"  {i:2d}: {line}")
     print("\n" + "-" * 60)
 
+    # First, handle the case where data might be on a single line with \n separators
+    all_lines = []
+    for line in lines:
+        # Split on literal \n if it exists, otherwise treat as single line
+        if "\\n" in line:
+            # Handle literal \n separators
+            split_lines = line.split("\\n")
+            all_lines.extend(split_lines)
+        else:
+            all_lines.append(line)
+
+    # Remove empty lines
+    all_lines = [line.strip() for line in all_lines if line.strip()]
+
+    print(f"📝 Parsed into {len(all_lines)} individual records:")
+    for i, line in enumerate(all_lines, 1):
+        print(f"  {i:2d}: {line}")
+    print("\n" + "-" * 60)
+
     # Parse delimited data
     parsed_people = []
-    for line_num, line in enumerate(lines, 1):
+    for line_num, line in enumerate(all_lines, 1):
         try:
             # Split by semicolon and unescape
             parts = [part.replace("&#59;", ";") for part in line.split(";")]
