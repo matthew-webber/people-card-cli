@@ -153,7 +153,7 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
 // JavaScript snippet to find a person card by name on a webpage
 (async () => {{
   // --- DEBUG SETUP ---
-  myDebug = 1;
+  myDebug = 2;
   myDebugLevels = {{
     DEBUG: 1,
     INFO: 2,
@@ -177,6 +177,7 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     name,
     found: false,
     headshotImgString: null,
+    pCardName: null,
   }}));
 
   // --- Helpers ---
@@ -298,8 +299,8 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
   }}
 
   // --- Tree search utils ---
-  const findNodeExact = (name, searchRoot = document) =>
-    Array.from(searchRoot.querySelectorAll('.scContentTreeNode')).find(
+  const findNodeExact = (name) =>
+    Array.from(document.querySelectorAll('.scContentTreeNode')).find(
       (node) => {{
         const target = sanitizeName(name);
         const span = node.querySelector('span');
@@ -311,11 +312,11 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
       }}
     );
 
-  function waitForMatchExact(name, searchRoot = document, timeout = 5000) {{
+  function waitForMatchExact(name, timeout = 5000) {{
     return new Promise((resolve, reject) => {{
       const start = Date.now();
       (function check() {{
-        const m = findNodeExact(name, searchRoot);
+        const m = findNodeExact(name);
         if (m) return resolve(m);
         if (Date.now() - start > timeout)
           return reject(new Error('Timeout waiting for ' + name));
@@ -324,8 +325,8 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     }});
   }}
 
-  async function expand(name, searchRoot = document) {{
-    const node = await waitForMatchExact(name, searchRoot);
+  async function expand(name) {{
+    const node = await waitForMatchExact(name);
     const arrow = node.querySelector('img');
     if (!arrow) {{
       console.warn('no expand arrow for', name);
@@ -335,7 +336,6 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
       console.log('expanding', name, 'found node:', node, 'with arrow:', arrow);
     }}
     if (node.lastElementChild && node.lastElementChild.tagName === 'DIV') {{
-      console.log('already expanded', name);
       return node;
     }}
     arrow.click();
@@ -343,9 +343,9 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     return node;
   }}
 
-  function findNodesByRegex(regex, searchRoot = document) {{
+  function findNodesByRegex(regex) {{
     const nodes = Array.from(
-      searchRoot.querySelectorAll('.scContentTreeNode')
+      document.querySelectorAll('.scContentTreeNode')
     ).filter((node) => {{
       const span = node.querySelector('span');
       if (!span) return false;
@@ -359,11 +359,11 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     return nodes;
   }}
 
-  function waitForRegex(regex, searchRoot = document, timeout = 5000) {{
+  function waitForRegex(regex, timeout = 5000) {{
     return new Promise((resolve, reject) => {{
       const start = Date.now();
       (function check() {{
-        const matches = findNodesByRegex(regex, searchRoot);
+        const matches = findNodesByRegex(regex);
         if (matches.length) return resolve(matches);
         if (Date.now() - start > timeout)
           return reject(new Error('Timeout waiting for regex: ' + regex));
@@ -372,8 +372,8 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     }});
   }}
 
-  async function clickFirstRegex(scope, regex, searchRoot = document, timeout = 2500) {{
-    const matches = await waitForRegex(regex, searchRoot, timeout);
+  async function clickRegexMatch(regex, timeout = 2500) {{
+    const matches = await waitForRegex(regex, timeout);
     const node = matches[0];
     const span = node.querySelector('span');
     if (span) {{
@@ -381,7 +381,6 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
         console.log('Clicking node:', span.textContent);
       }}
       span.click();
-      if (scope !== 'exact') {{console.log('scope is', scope); await countdown(0);}}
       return true;
     }} else {{
       console.warn('no span to click for regex match');
@@ -389,13 +388,13 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     }}
   }}
 
-  async function getHeadshotImageString(searchRoot = document) {{
-    let val = null;
+  async function getHeadshotImageString() {{
+    let headshotImgStr = null;
     // Step 0: pause briefly to allow UI to update
     console.log('🐢 Waiting 1.5s for UI to update...');
     await new Promise((r) => setTimeout(r, 1500));
     // Find the span whose text contains "Headshot Image" (non-strict match)
-    const targetSpan = Array.from(searchRoot.querySelectorAll('span')).find(
+    const targetSpan = Array.from(document.querySelectorAll('span')).find(
       (span) => (span.textContent || '').includes('Headshot Image')
     );
 
@@ -407,17 +406,20 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
       // Step 3: find the input inside that sibling
       const input = sibling?.querySelector('input');
       // Step 4: get the value attribute
-      const val = input?.getAttribute('value');
+      headshotImgStr = input?.getAttribute('value');
     }} else {{
       console.warn("No span containing 'Headshot Image' found.");
     }}
-    return val || null;
+    if (myDebug < myDebugLevels.WARN) {{
+      console.log('Headshot image string:', headshotImgStr);
+    }}
+    return headshotImgStr || null;
   }}
 
-  const conditionallyModifyPeopleCardData = async () => {{
+  const conditionallyModifyPeopleCardData = async (person) => {{
     if (window.pFound === true) {{
         person.found = true;
-        person.headshotImgString = await getHeadshotImageString(currentSearchRoot);
+        person.headshotImgString = await getHeadshotImageString();
       }} else {{
         console.log('Skipping headshot grab as pFound is not true.');
       }}
@@ -425,81 +427,79 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
 
   for (const person of peopleCardData) {{
     try {{
-      // 1) Parse, compute path
+      // 1) Parse and validate the person's name
       const [first, last] = person.name;
-      if (myDebug < myDebugLevels.WARN) console.log(`Searching for: ${{person.name}} => first: ${{first}}, last: ${{last}}`);
+      if (myDebug < myDebugLevels.WARN) {{
+        console.log(`Searching for: ${{person.name}} => first: ${{first}}, last: ${{last}}`);
+      }}
       if (!first || !last) {{
         console.warn('Skipping unparsable name:', person.name);
         continue;
       }}
+
+      // 2) Compute path and expand to range folder
       const {{ letterFolder, rangeFolder }} = computeLetterAndRange(last);
       const expandNames = [...BASE_PATH, letterFolder, rangeFolder];
-
-      // 2) Expand down to the range folder
-      let currentSearchRoot = document;
       for (const name of expandNames) {{
-        const expandedNode = await expand(name, currentSearchRoot);
-        currentSearchRoot = expandedNode; // scope subsequent searches
+        await expand(name);
       }}
 
-      // regexes
+      // 3) Build regex patterns
       const exactRe = buildExactRegex(last, first);
       const lastPlusInitialRe = buildLastPlusFirstInitialRegex(last, first);
       const lastOnlyRe = buildLastOnlyRegex(last);
       const firstLetterRe = buildFirstLetterRegex(last);
 
-      // 3) Try to find exact match first
-      try {{
-        if (await clickFirstRegex('exact', exactRe, currentSearchRoot, 3000)) {{
-          person.found = true;
-          person.headshotImgString = getHeadshotImageString(currentSearchRoot);
-          continue;
+      // Helper function to attempt a match and update person data if successful
+      async function attemptMatch(person, scope, regex, timeout) {{
+        try {{
+          const clicked = await clickRegexMatch(regex, timeout);
+          if (clicked && scope !== 'exact') {{
+            await countdown(0);
+          }}
+
+          if (window.pFound) {{
+            person.found = true;
+            person.headshotImgString = await getHeadshotImageString();
+            return true;
+          }} else {{
+            if (myDebug < myDebugLevels.WARN) {{
+              console.warn(`Skipping headshot grab as pFound is not true for scope "${{scope}}".`);
+            }}
+          }}
+        }} catch (e) {{
+          if (myDebug < myDebugLevels.WARN) {{
+            console.warn(`Scope of "${{scope}}" match failed:`, e.message);
+          }}
         }}
-      }} catch (e) {{
-        if (myDebug < myDebugLevels.WARN)
-          console.warn('Exact match timed out, trying fallbacks...', e.message);
+        return false;
       }}
 
-      // 4) Fallbacks:
-      //   last+first initial,
-      //   last only,
-      //   first letter of last name
-
-      // last name + first initial
-      try {{
-        if (await clickFirstRegex('last_first_initial', lastPlusInitialRe, currentSearchRoot, 2000))
-          conditionallyModifyPeopleCardData();
-          continue;
-      }} catch (e) {{
-        if (myDebug < myDebugLevels.WARN)
-          console.warn(
-            'Last+FirstInitial timed out, next fallback...',
-            e.message
-          );
+      // 4) Attempt exact match first
+      if (await attemptMatch(person, 'exact', exactRe, 3000)) {{
+        continue;
       }}
 
-      // last name only
-      try {{
-        if (await clickFirstRegex('lastname_only', lastOnlyRe, currentSearchRoot, 2000))
-          conditionallyModifyPeopleCardData();
-          continue;
-      }} catch (e) {{
-        if (myDebug < myDebugLevels.WARN)
-          console.warn('Last-only timed out, final fallback...', e.message);
+      // 5) Fallback attempts in order
+      const fallbacks = [
+        {{ scope: 'last_first_initial', regex: lastPlusInitialRe, timeout: 2000 }},
+        {{ scope: 'lastname_only', regex: lastOnlyRe, timeout: 2000 }},
+        {{ scope: 'first_letter_lastname', regex: firstLetterRe, timeout: 2000 }},
+      ];
+
+      let found = false;
+      for (const {{ scope, regex, timeout }} of fallbacks) {{
+        if (await attemptMatch(person, scope, regex, timeout)) {{
+          found = true;
+          break;
+        }}
       }}
 
-      // first letter (this should always exist within the range)
-      try {{
-        if (await clickFirstRegex('first_letter_lastname', firstLetterRe, currentSearchRoot, 2000))
-          conditionallyModifyPeopleCardData();
-          continue;
-      }} catch (e) {{
-        console.warn(
-          'First-letter fallback timed out; nothing clickable matched expected patterns.'
-        );
+      if (!found) {{
+        console.warn('No matches found for:', person.name);
       }}
     }} catch (e) {{
-      console.error(e);
+      console.error('Error processing person:', person.name, e);
     }}
   }}
   console.log('People card data results:', peopleCardData);
