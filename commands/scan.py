@@ -179,6 +179,8 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     INFO: 2,
     WARN: 3,
   }};
+  window.pFound = null; // global flag to be set manually in console
+  window.nameSearchingFor = null; // current name being searched for
 
   // --- INPUT: person full name as "first_name last_name" ---
   // Prompt for name, remembering last entry in localStorage
@@ -237,16 +239,23 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
       window.pFound = null;
       let num_waits = 0;
       console.log('Waiting (up to 30s) for window.pFound to be true...');
+      if (window.nameSearchingFor) {{
+        console.log(`🔎 Search for: ${{window.nameSearchingFor}}`);
+      }}
       console.log('***DIRECTIONS***');
       console.log('1. Set window.pFound = true in the console to grab the headshot string.');
       console.log('2. If person not found, set window.pFound = false to skip.');
       console.log('3. If nothing happens after 30s, the script will continue automatically.');
       while (window.pFound === null && num_waits < 10) {{
-        console.log('Waiting...');
+        if (window.nameSearchingFor) {{
+          console.log(`Waiting... (target: ${{window.nameSearchingFor}})`);
+        }} else {{
+          console.log('Waiting...');
+        }}
         await new Promise((resolve) => setTimeout(resolve, 3000));
         num_waits++;
       }}
-      console.log('pFound is now true.');
+      console.log(`${{window.pFound === true ? '✅ Proceeding with data of currently selected person.' : window.pFound === false ? '❌ Skipping to next person.' : '⌛️ Timeout reached without confirmation, skipping.'}}`);
       return;
     }}
     for (let i = seconds; i > 0; i--) {{
@@ -446,8 +455,11 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
     try {{
       // 1) Parse and validate the person's name
       const [first, last] = person.name;
+      // update global hint for the user during manual countdowns
+      window.nameSearchingFor = `${{first}} ${{last}}`;
       if (myDebug < myDebugLevels.WARN) {{
         console.log(`Searching for: ${{person.name}} => first: ${{first}}, last: ${{last}}`);
+        console.log(`nameSearchingFor set to: ${{window.nameSearchingFor}}`);
       }}
       if (!first || !last) {{
         console.warn('Skipping unparsable name:', person.name);
@@ -482,6 +494,23 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
             person.pCardName = getPeopleCardName();
             person.headshotImgString = await getHeadshotImageString();
             return true;
+          }} else {{
+            const [first, last] = person.name;
+            switch (scope) {{
+              case 'last_first_initial':
+                console.log(`Matched last + first initial: ${{last.toUpperCase()}}, ${{first.charAt(0).toUpperCase()}}`);
+                break;
+
+              case 'lastname_only':
+                console.log(`Matched last: ${{last.toUpperCase()}}`);
+                break;
+
+              case 'first_letter_lastname':
+                console.log(`Matched first letter of last name: ${{last.charAt(0).toUpperCase()}}`);
+                break;
+              default:
+                break;
+            }}
           }}
 
           await countdown(0); // resets window.pFound to null and waits for user input
@@ -517,9 +546,19 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
       ];
 
       let found = false;
+
       for (const {{ scope, regex, timeout }} of fallbacks) {{
-        if (await attemptMatch(person, scope, regex, timeout)) {{
-          found = true;
+          window.pFound = null; // reset before each attempt
+          if (myDebug < myDebugLevels.WARN) {{
+            console.log(`Attempting fallback scope: ${{scope}} with regex: ${{regex}}`);
+          }}
+
+        found = await attemptMatch(person, scope, regex, timeout);
+
+        if (found || window.pFound === false) {{
+          if (myDebug < myDebugLevels.WARN) {{
+            console.log(`Found: ${{found}}, pFound: ${{window.pFound}} after scope: ${{scope}}`);
+          }}
           break;
         }}
       }}
