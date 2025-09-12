@@ -1,3 +1,6 @@
+from commands.show import cmd_show
+
+
 DOMAINS = [
     {
         "full_name": "Enterprise",
@@ -132,6 +135,7 @@ def get_commands(state):
         "bulk": lambda args: cmd_bulk_check(args, state),  # Alias for bulk
         "scan": lambda args: cmd_scan(args, state),
         "report": lambda args: cmd_report(args, state),
+        "show": lambda args: cmd_show(args, state),
         "help": lambda args: cmd_help(args, state),
         "exit": lambda args: exit(0),
         "quit": lambda args: exit(0),
