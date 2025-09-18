@@ -613,13 +613,17 @@ def cmd_scan(args, state=None):
     use_extracted = False
 
     if state:
-        extracted_file = state.get_variable("EXTRACTED_PEOPLE_LIST")
-        if extracted_file and os.path.exists(extracted_file):
-            names_file = extracted_file
-            use_extracted = True
-            print(f"📋 Using extracted people list: {os.path.basename(extracted_file)}")
-        else:
-            print(f"📄 Using default names file: {NAMES_FILE}")
+      extracted_file = state.get_variable("EXTRACTED_PEOPLE_LIST")
+      print(f"DEBUG: extracted_file from state: {extracted_file}")
+      if extracted_file and os.path.exists(extracted_file):
+        names_file = extracted_file
+        use_extracted = True
+        print(f"📋 Using extracted people list: {os.path.basename(extracted_file)}")
+        print(f"DEBUG: use_extracted set to True")
+      else:
+        print(f"DEBUG: extracted_file is None or does not exist, using default")
+        print(f"📄 Using default names file: {NAMES_FILE}")
+        print(f"DEBUG: use_extracted remains False")
 
     try:
         if use_extracted:
@@ -732,6 +736,22 @@ def cmd_scan(args, state=None):
     except KeyboardInterrupt:
         print("\n🚫 Operation cancelled by user")
     finally:
+        # At the end of the scan command, print TODOs for placeholder headshots if any were detected
+        try:
+            if state is not None:
+                placeholders = getattr(state, "scan_placeholder_headshots", None)
+                if placeholders:
+                    print("\n" + "=" * 60)
+                    print("🧩 TODO")
+                    print("=" * 60)
+                    print("The following people have placeholder headshots (Headshots/P/p_placeholder):")
+                    for entry in placeholders:
+                        name = entry.get("name_display") or "Unknown"
+                        print(f"  - {name}")
+                    print("Please update these headshots in Sitecore before finalizing the export.")
+        except Exception:
+            # Don't let this best-effort summary interfere with command completion
+            pass
         print("\n🏁 Scan command completed")
 
 
@@ -803,93 +823,106 @@ def _process_pasted_data(lines, state=None):
 
 
 def _process_received_data(data, state=None):
-    """Process and display the received people card data.
+  """Process and display the received people card data.
 
-    state: optional CLIState instance explicitly passed from caller. Passing explicitly
-    avoids brittle reliance on global lookups that could fail depending on invocation context.
-    """
-    active_state = state
+  state: optional CLIState instance explicitly passed from caller. Passing explicitly
+  avoids brittle reliance on global lookups that could fail depending on invocation context.
+  """
+  active_state = state
 
-    print("\n" + "=" * 60)
-    print("📊 RECEIVED PEOPLE CARD DATA")
-    print("=" * 60)
+  print("\n" + "=" * 60)
+  print("📊 RECEIVED PEOPLE CARD DATA")
+  print("=" * 60)
 
-    # Print raw data for sanity check as requested
-    print("🔍 Raw data received:")
-    print(json.dumps(data, indent=2))
-    print("\n" + "-" * 60)
+  # Print raw data for sanity check as requested
+  print("🔍 Raw data received:")
+  print(json.dumps(data, indent=2))
+  print("\n" + "-" * 60)
 
-    # Process and summarize the data
-    total_people = len(data)
-    found_count = sum(1 for person in data if person.get("found", False))
+  # Process and summarize the data
+  total_people = len(data)
+  found_count = sum(1 for person in data if person.get("found", False))
 
-    print(f"📈 SUMMARY:")
-    print(f"   Total people processed: {total_people}")
-    print(f"   People found: {found_count}")
-    print(f"   People not found: {total_people - found_count}")
+  print(f"📈 SUMMARY:")
+  print(f"   Total people processed: {total_people}")
+  print(f"   People found: {found_count}")
+  print(f"   People not found: {total_people - found_count}")
 
-    print(f"\n📋 DETAILED RESULTS:")
-    export_rows = []
+  print(f"\n📋 DETAILED RESULTS:")
+  export_rows = []
+  placeholder_headshots = []  # Track any people with placeholder headshots
 
-    for i, person in enumerate(data, 1):
-        name = person.get("name", ["Unknown", "Unknown"])  # [first,last]
-        found = person.get("found", False)
-        headshot = person.get("headshotImgString")
-        pcard = person.get("pCardName")
+  for i, person in enumerate(data, 1):
+    name = person.get("name", ["Unknown", "Unknown"])  # [first,last]
+    found = person.get("found", False)
+    headshot = person.get("headshotImgString")
+    pcard = person.get("pCardName")
 
-        first = name[0] if isinstance(name, list) and len(name) > 0 else ""
-        last = name[1] if isinstance(name, list) and len(name) > 1 else ""
-        key = (first.lower(), last.lower())
-        pct_keys = []
-        if active_state is not None and hasattr(active_state, "scan_pct_map"):
-            pct_keys = sorted(active_state.scan_pct_map.get(key, []))
+    first = name[0] if isinstance(name, list) and len(name) > 0 else ""
+    last = name[1] if isinstance(name, list) and len(name) > 1 else ""
+    key = (first.lower(), last.lower())
+    pct_keys = []
+    if active_state is not None and hasattr(active_state, "scan_pct_map"):
+      pct_keys = sorted(active_state.scan_pct_map.get(key, []))
 
-        status = "✅ FOUND" if found else "❌ NOT FOUND"
-        name_display = f"{first} {last}".strip()
-        print(f"   {i:2d}. {status} - {name_display}")
-        if pct_keys:
-            print(f"       🔑 PCT Keys: {', '.join(pct_keys)}")
-        if found and headshot:
-            headshot_preview = headshot[:70] + ("..." if len(headshot) > 70 else "")
-            print(f"       🖼️  Headshot: {headshot_preview}")
-        if pcard:
-            print(f"       📛 Sitecore Name: {pcard}")
+    status = "✅ FOUND" if found else "❌ NOT FOUND"
+    name_display = f"{first} {last}".strip()
+    print(f"   {i:2d}. {status} - {name_display}")
+    if pct_keys:
+      print(f"       🔑 PCT Keys: {', '.join(pct_keys)}")
+    if found and headshot:
+      headshot_preview = headshot[:70] + ("..." if len(headshot) > 70 else "")
+      print(f"       🖼️  Headshot: {headshot_preview}")
+    if pcard:
+      print(f"       📛 Sitecore Name: {pcard}")
 
-        # Build export rows (one row per PCT key if present, else one placeholder row)
-        if pct_keys:
-            for pct_key in pct_keys:
-                export_rows.append(
-                    {
-                        "Name (PCT)": pct_key,
-                        "Full Name": name_display,
-                        "Headshot String": headshot or "",
-                        "Name (Sitecore)": pcard or "",
-                    }
-                )
-        else:
-            export_rows.append(
-                {
-                    "Name (PCT)": "",
-                    "Full Name": name_display,
-                    "Headshot String": headshot or "",
-                    "Name (Sitecore)": pcard or "",
-                }
-            )
+    # Build export rows (one row per PCT key if present, else one placeholder row)
+    if pct_keys:
+      for pct_key in pct_keys:
+        export_rows.append(
+          {
+            "Name (PCT)": pct_key,
+            "Full Name": name_display,
+            "Headshot String": headshot or "",
+            "Name (Sitecore)": pcard or "",
+          }
+        )
+    else:
+      export_rows.append(
+        {
+          "Name (PCT)": "",
+          "Full Name": name_display,
+          "Headshot String": headshot or "",
+          "Name (Sitecore)": pcard or "",
+        }
+      )
 
-    print("=" * 60)
+    # Capture placeholder headshots for end-of-command TODO summary
+    hs_norm = (headshot or "").strip().lower()
+    if hs_norm == "headshots/p/p_placeholder":
+      placeholder_headshots.append(
+        {
+          "first": first,
+          "last": last,
+          "name_display": name_display,
+        }
+      )
 
-    # Store export rows in state for later save
-    if active_state is not None:
-        active_state.scan_export_rows = export_rows
-        print(f"💾 Prepared {len(export_rows)} row(s) for export.")
-        # Offer immediate export only if there are rows
-        if export_rows:
-            try:
-                choice = input("📝 Export to Excel now? [Y/n]: ").strip().lower()
-            except KeyboardInterrupt:
-                choice = "n"
-            if choice in ("", "y", "yes"):
-                _export_scan_results_to_excel(active_state)
+  print("=" * 60)
+
+  # Store export rows and placeholder summary in state for later use
+  if active_state is not None:
+    active_state.scan_export_rows = export_rows
+    active_state.scan_placeholder_headshots = placeholder_headshots
+    print(f"💾 Prepared {len(export_rows)} row(s) for export.")
+    # Offer immediate export only if there are rows
+    if export_rows:
+      try:
+        choice = input("📝 Export to Excel now? [Y/n]: ").strip().lower()
+      except KeyboardInterrupt:
+        choice = "n"
+      if choice in ("", "y", "yes"):
+        _export_scan_results_to_excel(active_state)
 
 
 def _export_scan_results_to_excel(state):
