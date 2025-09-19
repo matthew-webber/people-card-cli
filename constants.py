@@ -131,6 +131,7 @@ def get_commands(state):
     from commands.scan import cmd_scan
     from commands.extract import cmd_extract
     from commands.core import cmd_open
+    from commands.history import cmd_history
 
     return {
         "bulk_check": lambda args: cmd_bulk_check(args, state),
@@ -141,6 +142,7 @@ def get_commands(state):
         "show": lambda args: cmd_show(args, state),
         "open": lambda args: cmd_open(args, state),
         "help": lambda args: cmd_help(args, state),
+        "history": lambda args: cmd_history(args, state),
         "exit": lambda args: exit(0),
         "quit": lambda args: exit(0),
         "q": lambda args: exit(0),
