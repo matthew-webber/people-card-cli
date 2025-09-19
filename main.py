@@ -83,7 +83,7 @@ def main():
         description="People Card CLI - simplified migration helper"
     )
     parser.add_argument(
-        "--no-debug", dest="debug", action="store_false", help="Disable debug output"
+        "--debug", dest="debug", action="store_true", help="Enable debug output"
     )
     parser.add_argument("--url", help="Set initial URL")
     parser.add_argument("--selector", default="#main", help="Set initial CSS selector")
@@ -92,7 +92,7 @@ def main():
         action="store_true",
         help="Include sidebar in page extraction",
     )
-    parser.set_defaults(debug=True)
+    parser.set_defaults(debug=False)
     args = parser.parse_args()
 
     # Initialize history system

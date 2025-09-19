@@ -22,7 +22,7 @@ class CLIState:
             "DSM_FILE": "",
             "CACHE_FILE": "",
             "PROPOSED_PATH": "",
-            "DEBUG": "true",
+            "DEBUG": "false",
             "TAXONOMY": "",
             "EXTRACTED_PEOPLE_LIST": "",
         }

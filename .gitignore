@@ -86,3 +86,6 @@ names*.txt
 *.bmp
 *.tiff
 *.svg
+
+# temp / lazy boi files
+TODO.md
