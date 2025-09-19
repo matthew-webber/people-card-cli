@@ -131,6 +131,18 @@ def cmd_open(args, state):
         except Exception as e:
             print(f"❌ Failed to open report: {e}")
 
+    elif target == "existing_urls":
+        existing_urls = state.get_variable("EXISTING_URLS")
+        if not existing_urls:
+            print("❌ No existing URLs found in state.")
+            return
+        for url in existing_urls:
+            try:
+                _open_url_in_browser(url)
+            except Exception as e:
+                print(f"❌ Failed to open URL {url}: {e}")
+        print(f"✅ Opened {len(existing_urls)} existing URL(s) in browser.")
+
     else:
         print(f"❌ Unknown target: {target}")
         print("Available targets: dsm, page, url, report")

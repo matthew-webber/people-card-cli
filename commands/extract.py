@@ -85,7 +85,7 @@ def cmd_extract(args, state):
     # Chain the open command to open the URL in browser
     from commands.core import cmd_open
 
-    cmd_open([], state)
+    cmd_open(["existing_urls"], state)
 
 
 def _open_file_in_editor(filepath):
