@@ -13,6 +13,7 @@ class CLIState:
         self.variables = {
             "URL": "",
             "EXISTING_URLS": [],
+            "EXISTING_URLS_COUNT": "0",
             "DOMAIN": "",
             "ROW": "",
             "KANBAN_ID": "",

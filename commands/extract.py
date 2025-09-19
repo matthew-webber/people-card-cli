@@ -82,6 +82,11 @@ def cmd_extract(args, state):
         print(f"⚠️  Could not open file automatically: {e}")
         print(f"📍 Please open manually: {filename}")
 
+    # Chain the open command to open the URL in browser
+    from commands.core import cmd_open
+
+    cmd_open([], state)
+
 
 def _open_file_in_editor(filepath):
     """Open a file in the default text editor."""

@@ -689,7 +689,6 @@ def cmd_scan(args, state=None):
         for name in names
         if (first := _tokenize_name(name)[0]) and (last := _tokenize_name(name)[2])
     ]
-    print(f"\nNames are: names = {names}\n")
 
     js = _card_finder_js(names)
     try:

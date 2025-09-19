@@ -22,6 +22,12 @@ def print_help_for_command(command, state):
         print("Usage: extract [<domain> <row>]")
         print("Generate or open a people list file for current page or specified page.")
         print("Files are saved to ./people/ directory and used by scan command.")
+    elif command == "open":
+        print("Usage: open [<target>]")
+        print("Open resources in their default applications.")
+        print(
+            "Targets: (none) - open current URL, dsm - open DSM file, page/url - open current URL, report - open current report"
+        )
     elif command == "scan":
         print("Usage: scan")
         print(
@@ -38,6 +44,7 @@ def cmd_help(args, state):
     print("  report [--force] [<domain> <row1> [row2 ...]]")
     print("  scan              # scan latest pct-*.xlsx and copy/paste data")
     print("  extract [<domain> <row>]  # generate/open people list file for page")
+    print("  open [<target>]   # open URL, DSM file, or report in default app")
     print("  bulk_check [csv_filename]")
     print("  help [command]")
     print("  exit, quit")

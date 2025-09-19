@@ -58,7 +58,20 @@ def _open_url_in_browser(url):
 def cmd_open(args, state):
     """Open different resources in their default applications."""
     if not args:
-        return print_help_for_command("open", state)
+        # If no arguments, open the current URL
+        url = state.get_variable("URL")
+        if not url:
+            print(
+                "❌ No URL set. Use 'set URL <value>' or 'load <domain> <row>' first."
+            )
+            return
+
+        try:
+            _open_url_in_browser(url)
+            print(f"✅ Opening URL in browser: {url}")
+        except Exception as e:
+            print(f"❌ Failed to open URL: {e}")
+        return
 
     target = args[0].lower()
 
