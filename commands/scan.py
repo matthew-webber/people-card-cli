@@ -14,7 +14,14 @@ import os
 import re
 import sys
 import json
+import unicodedata
+from pathlib import Path
+from urllib.parse import urljoin, urlparse
 from typing import List, Tuple, Optional
+
+import requests
+
+from utils.scraping import get_page_soup
 
 try:
     import pandas as pd
@@ -148,6 +155,27 @@ def _key_variants_from_name(name: str) -> List[str]:
             uniq.append(v)
             seen.add(v)
     return uniq
+
+
+def _normalize_for_match(text: Optional[str]) -> str:
+    if not text:
+        return ""
+    normalized = unicodedata.normalize("NFKD", text)
+    ascii_str = normalized.encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z0-9]+", "", ascii_str.lower())
+
+
+def _is_placeholder_headshot(headshot: Optional[str]) -> bool:
+    if not headshot:
+        return False
+    needle = headshot.strip().lower()
+    if not needle:
+        return False
+    return (
+        needle == "headshots/p/p_placeholder"
+        or "target" in needle
+        or "placeholder" in needle
+    )
 
 
 def _load_column_a_as_keys(xlsx_path: str) -> pd.Series:
@@ -854,6 +882,7 @@ def _process_received_data(data, state=None):
     print(f"\n📋 DETAILED RESULTS:")
     export_rows = []
     placeholder_headshots = []  # Track any people with placeholder headshots
+    download_targets = []
 
     for i, person in enumerate(data, 1):
         name = person.get("name", ["Unknown", "Unknown"])  # [first,last]
@@ -868,6 +897,8 @@ def _process_received_data(data, state=None):
         if active_state is not None and hasattr(active_state, "scan_pct_map"):
             pct_keys = sorted(active_state.scan_pct_map.get(key, []))
 
+        is_placeholder = _is_placeholder_headshot(headshot)
+
         status = "✅ FOUND" if found else "❌ NOT FOUND"
         name_display = f"{first} {last}".strip()
         print(f"   {i:2d}. {status} - {name_display}")
@@ -878,6 +909,16 @@ def _process_received_data(data, state=None):
             print(f"       🖼️  Headshot: {headshot_preview}")
         if pcard:
             print(f"       📛 Sitecore Name: {pcard}")
+
+        if (not found) or is_placeholder:
+            download_targets.append(
+                {
+                    "first": first,
+                    "last": last,
+                    "name_display": name_display,
+                    "pct_keys": pct_keys,
+                }
+            )
 
         # Build export rows (one row per PCT key if present, else one placeholder row)
         if pct_keys:
@@ -927,6 +968,9 @@ def _process_received_data(data, state=None):
             # if choice in ("", "y", "yes"):
             _export_scan_results_to_excel(active_state)
 
+            if download_targets:
+                _download_headshots_for_targets(active_state, download_targets)
+
 
 def _export_scan_results_to_excel(state):
     """Write the scan_export_rows to an Excel file."""
@@ -943,9 +987,6 @@ def _export_scan_results_to_excel(state):
     except ImportError:
         print("❌ pandas is required to export Excel. Install with: pip install pandas")
         return
-    import datetime
-    from pathlib import Path
-
     df = pd.DataFrame(
         rows, columns=["Name (PCT)", "Full Name", "Headshot String", "Name (Sitecore)"]
     )
@@ -957,3 +998,150 @@ def _export_scan_results_to_excel(state):
         print(f"✅ Export written: {fname}")
     except Exception as e:
         print(f"❌ Failed to write export: {e}")
+
+
+def _download_headshots_for_targets(state, targets):
+    """Attempt to download headshots for people who need them."""
+
+    if not targets:
+        return
+
+    if state is None or not hasattr(state, "get_variable"):
+        print("\n⚠️  State unavailable; skipping headshot scrape.")
+        return
+
+    existing_urls = state.get_variable("EXISTING_URLS") or []
+    if not existing_urls:
+        print("\n⚠️  No EXISTING_URLS available; skipping headshot scrape.")
+        return
+
+    print("\n" + "=" * 60)
+    print("🖼️  HEADSHOT SCRAPE")
+    print("=" * 60)
+
+    page_cache = {}
+    for url in existing_urls:
+        try:
+            soup, response = get_page_soup(url)
+            page_cache[url] = (soup, response)
+        except Exception as exc:  # pragma: no cover - network errors only shown at runtime
+            print(f"⚠️  Failed to fetch {url}: {exc}")
+
+    if not page_cache:
+        print("❌ Unable to fetch any EXISTING_URLS; skipping headshot scrape.")
+        return
+
+    headshots_dir = Path("headshots")
+    headshots_dir.mkdir(exist_ok=True)
+
+    def slugify_name(first: str, last: str) -> str:
+        def clean(part: Optional[str]) -> str:
+            if not part:
+                return ""
+            normalized = unicodedata.normalize("NFKD", part)
+            ascii_part = normalized.encode("ascii", "ignore").decode("ascii")
+            return re.sub(r"[^a-z0-9]+", "-", ascii_part.lower()).strip("-")
+
+        pieces = [clean(last), clean(first)]
+        joined = "-".join([p for p in pieces if p])
+        return joined or "headshot"
+
+    for target in targets:
+        first = target.get("first", "")
+        last = target.get("last", "")
+        name_display = target.get("name_display") or f"{first} {last}".strip()
+        pct_keys = target.get("pct_keys") or []
+
+        last_norm = _normalize_for_match(last)
+        if not last_norm:
+            print(f"⚠️  Skipping {name_display}: no last name available for matching.")
+            continue
+
+        matches = []
+        seen = set()
+        for _, (soup, response) in page_cache.items():
+            for img in soup.find_all("img"):
+                alt = img.get("alt")
+                if not alt:
+                    continue
+                alt_norm = _normalize_for_match(alt)
+                if not alt_norm or last_norm not in alt_norm:
+                    continue
+                src = img.get("src") or ""
+                if not src:
+                    continue
+                absolute_src = urljoin(response.url, src)
+                key = (absolute_src, alt)
+                if key in seen:
+                    continue
+                seen.add(key)
+                matches.append({"src": absolute_src, "alt": alt})
+
+        if not matches:
+            print(f"⚠️  No matching headshot found for {name_display}.")
+            continue
+
+        filename_stem = pct_keys[0] if pct_keys else slugify_name(first, last)
+        filename_stem = filename_stem or slugify_name(first, last)
+
+        for match in matches:
+            src = match["src"]
+            alt = match.get("alt") or "(no alt)"
+            print("\nFound candidate image for", name_display)
+            print(f"  Alt: {alt}")
+            print(f"  Src: {src}")
+
+            try:
+                choice = input("Save this image? [Y/n]: ").strip().lower()
+            except KeyboardInterrupt:
+                print("\n↪️  Headshot scraping cancelled by user.")
+                return
+
+            if choice not in ("", "y", "yes"):
+                print("↪️  Skipping this image.")
+                continue
+
+            try:
+                response = requests.get(src, timeout=30)
+                response.raise_for_status()
+            except requests.RequestException as exc:  # pragma: no cover - network
+                print(f"❌ Failed to download image: {exc}")
+                continue
+
+            ext = os.path.splitext(urlparse(src).path)[1]
+            if not ext:
+                content_type = (response.headers.get("Content-Type") or "").lower()
+                if "png" in content_type:
+                    ext = ".png"
+                elif "gif" in content_type:
+                    ext = ".gif"
+                elif "webp" in content_type:
+                    ext = ".webp"
+                else:
+                    ext = ".jpg"
+
+            output_path = headshots_dir / f"{filename_stem}{ext}"
+
+            if output_path.exists():
+                try:
+                    overwrite = input(
+                        f"⚠️  {output_path} exists. Overwrite? [y/N]: "
+                    ).strip().lower()
+                except KeyboardInterrupt:
+                    print("\n↪️  Headshot scraping cancelled by user.")
+                    return
+                if overwrite not in ("y", "yes"):
+                    print("↪️  Keeping existing file; skipping save.")
+                    continue
+
+            try:
+                with open(output_path, "wb") as fh:
+                    fh.write(response.content)
+                print(f"✅ Saved headshot to {output_path}")
+            except OSError as exc:
+                print(f"❌ Failed to write {output_path}: {exc}")
+                continue
+
+            break
+        else:
+            print(f"⚠️  No image saved for {name_display}.")
