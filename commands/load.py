@@ -48,6 +48,14 @@ def _extract_url_and_proposed_path(state, domain, row_num):
     )
 
     urls = get_existing_urls(df, row_num - df_header_row, col_name=existing_url_header)
+
+    # HACK
+    # add 'dev' as the first subdomain if it's not already present
+    urls = [u.replace("://", "://dev.") if "://" in u and not u.split("://")[1].startswith("dev.") else u for u in urls]
+
+    print(f"🔗 Found {len(urls)} existing URL(s) in the spreadsheet.")
+    print(f"   URLs: {', '.join(urls) if urls else 'None'}")
+
     proposed = get_proposed_url(
         df, row_num - df_header_row, col_name=proposed_url_header
     )
