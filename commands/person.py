@@ -245,9 +245,10 @@ def categorize_results(
     return categorized
 
 
-def cmd_person(args, state):
+def cmd_person(args, state) -> Dict[str, List[str]]:
 
     debug_print(f"90: Starting cmd_person with args: {args}")
+    debug_print(f"type of args: {type(args)}")
 
     """
     Person command handler.

@@ -21,6 +21,7 @@ from typing import List, Tuple, Optional
 
 import requests
 
+from commands.person import cmd_person
 from utils.people_names import (
     load_extracted_people_names,
     key_variants_from_name,
@@ -616,7 +617,51 @@ def cmd_scan(args, state=None):
         if (first := tokenize_name(name)[0]) and (last := tokenize_name(name)[2])
     ]
 
+    # At this point, we have the list of (first, last) names to process
+    if not names:
+        print("No valid names to process after tokenization.")
+        return
+
+    # Use the "person" command to determine if these people have already
+    # been found and have headshots, to avoid redundant work.
+
+    # create arg_list which looks like ["first", "last", "|", "first", "last", "|", ...]
+    arg_list = []
+    for first, last in names:
+        arg_list.append(first)
+        arg_list.append(last)
+        arg_list.append("|")
+    if arg_list and arg_list[-1] == "|":
+        arg_list.pop()  # remove trailing "|"
+
+    person_cmd_results = cmd_person(args=arg_list, state=state)
+
+    # person_cmd_results should look like...
+    """
+    categorized = {
+        "names_processed": names.copy(),
+        "names_not_found": [],
+        "names_found_no_headshot": [],
+        "names_found_placeholder_headshot": [],
+    }
+    """
+    if not person_cmd_results:
+        print("ERROR: Person command did not return any results.")
+        return
+    categorized = person_cmd_results
+    p_not_found = categorized.get("names_not_found", [])
+    p_no_headshot = categorized.get("names_found_no_headshot", [])
+    p_has_placeholder = categorized.get("names_found_placeholder_headshot", [])
+
+    # If none of the people need headshots, we can skip the JS snippet generation
+    if not (p_not_found or p_no_headshot or p_has_placeholder):
+        print("✅ All people already have headshots. No further action needed.")
+        return
+
+    # Generate JavaScript snippet to find people cards + headshot information
+
     js = _card_finder_js(names)
+
     try:
         import pyperclip  # type: ignore
 
