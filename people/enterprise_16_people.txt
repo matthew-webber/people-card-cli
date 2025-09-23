@@ -1,0 +1,12 @@
+# People list for Enterprise 16
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://web.musc.edu/about/leadership/president
+#
+
+Dawn Hartsell, MBA
+Micah Hubbard
+Nicole Folzenlogen
+Stephanie Kozelek

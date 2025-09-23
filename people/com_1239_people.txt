@@ -1,0 +1,9 @@
+# People list for COM 1239
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.medicine.musc.edu/departments/phs/about/chairman-message
+#
+
+Hermes Florez, M.D., Ph.D., MPH
