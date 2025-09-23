@@ -517,7 +517,7 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
           if (!clicked) return false;
 
           if (scope === 'exact') {{
-            await new Promise((r) => setTimeout(r, 1000));
+            await new Promise((r) => setTimeout(r, 2000));
             person.found = true;
             person.pCardName = getPeopleCardName();
             person.headshotImgString = await getHeadshotImageString();
@@ -1024,7 +1024,9 @@ def _download_headshots_for_targets(state, targets):
         try:
             soup, response = get_page_soup(url)
             page_cache[url] = (soup, response)
-        except Exception as exc:  # pragma: no cover - network errors only shown at runtime
+        except (
+            Exception
+        ) as exc:  # pragma: no cover - network errors only shown at runtime
             print(f"⚠️  Failed to fetch {url}: {exc}")
 
     if not page_cache:
@@ -1124,9 +1126,11 @@ def _download_headshots_for_targets(state, targets):
 
             if output_path.exists():
                 try:
-                    overwrite = input(
-                        f"⚠️  {output_path} exists. Overwrite? [y/N]: "
-                    ).strip().lower()
+                    overwrite = (
+                        input(f"⚠️  {output_path} exists. Overwrite? [y/N]: ")
+                        .strip()
+                        .lower()
+                    )
                 except KeyboardInterrupt:
                     print("\n↪️  Headshot scraping cancelled by user.")
                     return
