@@ -1,0 +1,10 @@
+# People list for COM 1122
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://medicine.musc.edu/departments/psychiatry/divisions-and-programs/programs/clinical-neurobiology-lab/faculty
+#
+
+William C. Griffin, Ph.D.
+Sarah W. Book, M.D.

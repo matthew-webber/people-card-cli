@@ -1,0 +1,10 @@
+# People list for COM 1288
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://medicine.musc.edu/departments/radiology/education-programs/acgme-residency-program/acgme-dr-residency
+#
+
+Seth Stalcup, M.D.
+Sandra Rutigliano, M.D.

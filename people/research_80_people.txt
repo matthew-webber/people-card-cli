@@ -1,0 +1,12 @@
+# People list for Research 80
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://research.musc.edu/about/administration
+#
+
+Timothy L. Stemmler, Ph.D.
+Patrick A. Flume, M.D.
+Les Lenert, M.D.
+Kevin Gray
