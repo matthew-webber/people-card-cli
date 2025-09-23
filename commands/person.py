@@ -6,14 +6,18 @@ the Excel files in people_reports directory for matching entries in the
 'Full Name' and 'Headshot String' columns.
 """
 
-import os
+import json
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from utils.people_names import get_name_before_comma, key_variants_from_name
+from utils.core import debug_print
 
 
 def parse_names(names_input: str) -> List[str]:
+
+    debug_print(f"10: Starting parse_names with input: {names_input}")
+
     """Parse names from input string, splitting on | and removing credentials."""
     raw_names = [name.strip() for name in names_input.split("|") if name.strip()]
     processed_names = []
@@ -27,7 +31,17 @@ def parse_names(names_input: str) -> List[str]:
     return processed_names
 
 
+def check_people_found_progress(results: Dict[str, Dict]) -> Tuple[int, int]:
+    """Check how many people have been found so far."""
+    total = len(results)
+    found = len([r for r in results.values() if r["found"]])
+    return found, total
+
+
 def search_excel_files(names: List[str]) -> Dict[str, Dict]:
+
+    debug_print(f"20: Starting search_excel_files for names: {names}")
+
     """
     Search Excel files in people_reports for matching names.
 
@@ -63,8 +77,19 @@ def search_excel_files(names: List[str]) -> Dict[str, Dict]:
         print(f"❌ No Excel files found in {reports_dir}")
         return results
 
+    debug_print(f"30: Found {len(excel_files)} Excel files to search")
+
     # Search each Excel file
     for excel_file in excel_files:
+
+        # Check if all names have been found
+        found_count, total_count = check_people_found_progress(results)
+        if found_count >= total_count:
+            debug_print("35: All names found, stopping search early")
+            break
+
+        debug_print(f"40: Processing file: {excel_file.name}")
+
         try:
             df = pd.read_excel(excel_file, engine="openpyxl")
 
@@ -82,6 +107,9 @@ def search_excel_files(names: List[str]) -> Dict[str, Dict]:
                 print(f"⚠️  No 'Full Name' column found in {excel_file.name}")
                 continue
             else:
+
+                debug_print(f"50: Searching for names in {excel_file.name}")
+
                 # Search for each name
                 for search_name in names:
                     if results[search_name]["found"]:
@@ -105,6 +133,11 @@ def search_excel_files(names: List[str]) -> Dict[str, Dict]:
 
                         # Check if any search variant matches any row variant
                         if any(sv in row_variants for sv in search_variants):
+
+                            print(
+                                f"60: Match found for {search_name} in {excel_file.name}"
+                            )
+
                             headshot_value = None
                             if headshot_col is not None:
                                 headshot_raw = df.loc[idx, headshot_col]
@@ -117,6 +150,9 @@ def search_excel_files(names: List[str]) -> Dict[str, Dict]:
                                 "headshot_string": headshot_value,
                                 "file_source": excel_file.name,
                             }
+                            debug_print(
+                                f"65: Found {search_name}\nDetails: {json.dumps(results[search_name], indent=2)}"
+                            )
                             break
 
         except Exception as e:
@@ -127,6 +163,9 @@ def search_excel_files(names: List[str]) -> Dict[str, Dict]:
 
 
 def print_results_table(results: Dict[str, Dict]) -> None:
+
+    debug_print(f"70: Starting print_results_table")
+
     """Print results in a tabular format."""
     if not results:
         print("❌ No results to display")
@@ -184,6 +223,9 @@ def print_results_table(results: Dict[str, Dict]) -> None:
 def categorize_results(
     names: List[str], results: Dict[str, Dict]
 ) -> Dict[str, List[str]]:
+
+    debug_print(f"80: Starting categorize_results")
+
     """Categorize results into different lists for return value."""
     categorized = {
         "names_processed": names.copy(),
@@ -204,6 +246,9 @@ def categorize_results(
 
 
 def cmd_person(args, state):
+
+    debug_print(f"90: Starting cmd_person with args: {args}")
+
     """
     Person command handler.
 

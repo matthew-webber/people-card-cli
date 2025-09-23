@@ -29,7 +29,6 @@ def get_name_before_comma(name: str) -> str:
 
 
 def tokenize_name(name: str) -> Tuple[str, Optional[str], str]:
-    print(f"🧢 Tokenizing name: {name}")
 
     quote_replaced_name = name.replace("“", '"').replace("”", '"')
     cleaned = re.sub(r"""[^"\w\s\-\.' ]""", " ", quote_replaced_name)
