@@ -39,6 +39,12 @@ def print_help_for_command(command, state):
         print("Usage: history [clear|stats]")
         print("View recent command history, clear history, or show statistics.")
         print("Use up/down arrow keys to navigate through command history.")
+    elif command == "person":
+        print("Usage: person <name1> [| <name2> | <name3> ...]")
+        print("Search Excel files in people_reports for matching people by name.")
+        print("Names can include credentials (will be stripped automatically).")
+        print("Returns tabular results and categorized summary data.")
+        print("Example: person John Smith | Jane Doe, MD | Robert Johnson")
     else:
         print(f"No help available for {command}.")
 
@@ -49,6 +55,7 @@ def cmd_help(args, state):
     print("  scan              # scan latest pct-*.xlsx and copy/paste data")
     print("  extract [<domain> <row>]  # generate/open people list file for page")
     print("  open [<target>]   # open URL, DSM file, or report in default app")
+    print("  person <name1> [| <name2> ...]  # search Excel files for people by name")
     print("  bulk_check [csv_filename]")
     print("  history [clear|stats]  # view/manage command history (use ↑/↓ arrows)")
     print("  help [command]")
