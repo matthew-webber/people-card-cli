@@ -65,13 +65,14 @@ coverage.xml
 # macOS
 .DS_Store
 
-# CSV output
+# Logs and databases
 *.csv
-*.xlsx
+~*.xlsx
+dsm*.xlsx
+pct*.xlsx
 
 migration_cache*
-reports/
 
-# temp files from updating profider profile URLs
+# temp files from updating provider profile URLs
 update_provider_profile_urls/*.html
 names*.txt
