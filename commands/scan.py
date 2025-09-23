@@ -21,6 +21,11 @@ from typing import List, Tuple, Optional
 
 import requests
 
+from utils.people_names import (
+    load_extracted_people_names,
+    key_variants_from_name,
+    tokenize_name,
+)
 from utils.scraping import get_page_soup
 
 try:
@@ -53,108 +58,6 @@ def _pick_latest_pct_xlsx() -> str:
         raise FileNotFoundError("No pct-*.xlsx files found in current directory.")
     candidates.sort(key=lambda t: t[0], reverse=True)
     return candidates[0][1]
-
-
-def _load_and_strip_names(path: str) -> List[str]:
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"{path} not found.")
-    stripped: List[str] = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            raw = line.strip()
-            if not raw:
-                continue
-            name_only = raw.split(",", 1)[0].strip()
-            if name_only:
-                stripped.append(name_only)
-
-    with open(path, "w", encoding="utf-8") as f:
-        for name in stripped:
-            f.write(name + "\n")
-
-    return stripped
-
-
-def _load_extracted_people_names(path: str) -> List[str]:
-    """Load names from an extracted people list file, ignoring comments."""
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"{path} not found.")
-
-    names: List[str] = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            raw = line.strip()
-            # Skip empty lines and comments
-            if not raw or raw.startswith("#"):
-                continue
-            # Split on comma and take first part (in case there are credentials)
-            name_only = raw.split(",", 1)[0].strip()
-            if name_only:
-                names.append(name_only)
-
-    return names
-
-
-def _tokenize_name(name: str) -> Tuple[str, Optional[str], str]:
-    quote_replaced_name = name.replace("“", '"').replace("”", '"')
-    cleaned = re.sub(r"""[^"\w\s\-\.' ]""", " ", quote_replaced_name)
-    cleaned = re.sub(
-        r"\b(Jr|Sr|II|III|IV|V|MD|PhD|Esq)\.?\s*$", "", cleaned, flags=re.IGNORECASE
-    )
-    parts = [p for p in re.split(r"\s+", cleaned.strip()) if p]
-    if len(parts) < 2:
-        return (parts[0], None, "") if parts else ("", None, "")
-
-    for p in parts:
-        if '"' in p:
-            match = re.search(r'"(.*?)"', p)
-            if match:
-                first = match.group(1)
-                break
-        if re.match(r"^[A-Za-z]\.?$", parts[0]):
-            first = parts[1] if len(parts) > 1 else parts[0]
-            break
-    else:
-        first = parts[0]
-
-    last = parts[-1]
-    middle_tokens = parts[1:-1]
-
-    mid_initial = None
-    if middle_tokens:
-        mt = middle_tokens[0].strip(".")
-        if mt:
-            mid_initial = mt[0]
-
-    return first, mid_initial, last
-
-
-def _key_variants_from_name(name: str) -> List[str]:
-    first, mid, last = _tokenize_name(name)
-
-    def norm(s: str) -> str:
-        s = s.replace(".", "")
-        s = re.sub(r"\s+", " ", s.strip().lower())
-        return s
-
-    first_n = norm(first)
-    last_n = norm(last)
-
-    variants = []
-    if last_n and first_n:
-        variants.append(f"{last_n}-{first_n}")
-    if mid:
-        mid_n = norm(mid)[0] if norm(mid) else ""
-        if mid_n:
-            variants.append(f"{last_n}-{mid_n}-{first_n}")
-
-    seen = set()
-    uniq = []
-    for v in variants:
-        if v not in seen:
-            uniq.append(v)
-            seen.add(v)
-    return uniq
 
 
 def _normalize_for_match(text: Optional[str]) -> str:
@@ -636,28 +539,23 @@ def cmd_scan(args, state=None):
         print(f"ERROR: {e}", file=sys.stderr)
         return
 
-    # Determine which file to use for names
-    names_file = NAMES_FILE
-    use_extracted = False
-
-    if state:
-        extracted_file = state.get_variable("EXTRACTED_PEOPLE_LIST")
-        print(f"DEBUG: extracted_file from state: {extracted_file}")
-        if extracted_file and os.path.exists(extracted_file):
-            names_file = extracted_file
-            use_extracted = True
-            print(f"📋 Using extracted people list: {os.path.basename(extracted_file)}")
-            print(f"DEBUG: use_extracted set to True")
-        else:
-            print(f"DEBUG: extracted_file is None or does not exist, using default")
-            print(f"📄 Using default names file: {NAMES_FILE}")
-            print(f"DEBUG: use_extracted remains False")
-
     try:
-        if use_extracted:
-            names = _load_extracted_people_names(names_file)
+
+        if state:
+            extracted_file = state.get_variable("EXTRACTED_PEOPLE_LIST")
+            print(f"DEBUG: extracted_file from state: {extracted_file}")
+            if extracted_file and os.path.exists(extracted_file):
+                names = load_extracted_people_names(extracted_file)
+                print(
+                    f"📋 Using extracted people list: {os.path.basename(extracted_file)}"
+                )
+                print(f"DEBUG: use_extracted set to True")
+            else:
+                # raise FileNotFoundError if the file doesn't exist
+                raise FileNotFoundError
         else:
-            names = _load_and_strip_names(names_file)
+            raise FileNotFoundError
+
     except Exception as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return
@@ -669,7 +567,7 @@ def cmd_scan(args, state=None):
         return
 
     print(f"Using Excel: {os.path.basename(xlsx_path)}")
-    file_type = "extracted people list" if use_extracted else "names file"
+    file_type = "extracted people list"
     print(
         f"Loaded {len(names)} name(s) from {file_type} (credentials stripped if present).\n"
     )
@@ -689,7 +587,7 @@ def cmd_scan(args, state=None):
         state.scan_export_rows = []
     # Matching loop
     for name in names:
-        variants = _key_variants_from_name(name)
+        variants = key_variants_from_name(name)
         found_rows = []
         matched_pct_keys = set()
         for v in variants:
@@ -703,7 +601,7 @@ def cmd_scan(args, state=None):
             total_found += 1
             print(f"[✅] {name} -> {key_display}  |  Rows: {found_rows}")
             if state is not None:
-                first, _, last = _tokenize_name(name)
+                first, _, last = tokenize_name(name)
                 k = (first.lower(), last.lower())
                 bucket = state.scan_pct_map.setdefault(k, set())
                 bucket.update(matched_pct_keys)
@@ -715,7 +613,7 @@ def cmd_scan(args, state=None):
     names = [
         (first, last)
         for name in names
-        if (first := _tokenize_name(name)[0]) and (last := _tokenize_name(name)[2])
+        if (first := tokenize_name(name)[0]) and (last := tokenize_name(name)[2])
     ]
 
     js = _card_finder_js(names)
