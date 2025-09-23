@@ -1,0 +1,10 @@
+# People list for Research 170
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.research.musc.edu/resources/sctr/about/success/regulatory
+#
+
+Leslie Bell
+Katherine Bright

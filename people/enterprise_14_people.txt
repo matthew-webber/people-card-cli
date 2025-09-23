@@ -1,0 +1,44 @@
+# People list for Enterprise 14
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.web.musc.edu/about/leadership/organizational-leadership/enterprise-leadership-council
+#
+
+David Cole, M.D., FACS
+Stuart Ames, MBA
+Susan Barnhart, MBA
+ Michael J. Bouchard, Ph.D.
+Crystal Broj
+Patrick Cawley, M.D.
+Thomas Crawford, Ph.D., MBA, FACHE
+Michael A. de Arellano, Ph.D.
+Annette R. Drachman, MHA, JD
+Catherine O. Durham, DNP, FNP, FAAN
+Johnathan Edwards,  M.D., MBA
+Clay England, MBA, SPHR
+Jesse Goodwin, Ph.D.
+Philip D. Hall, Pharm.D.
+Katherine Haltiwanger
+Dawn Hartsell, MBA 
+Megan Hays, Ph.D. 
+Eugene Hong
+Sarandeep S. Huja, DDS, Ph.D.
+Saj Joy, M.D., MBA, MS, FAAPL
+Zoher F. Kapasi, Ph.D., PT, MBA
+Doug Lischke
+Tsveti Markova, M.D., FAAFP
+Bill Martin
+Amar Nagaram, MS, MHI
+Cory Robinson, Ph.D., MHA, FACHE
+Danielle Bowen Scheurer, M.D., MSCR
+Michael G. Schmidt, Ph.D.
+Matthew Severance, MBA, MHA, FACHE
+Carol Shannon
+Kevin Spera, MS
+Timothy Stemmler, Ph.D.
+Terrence Steyer, M.D.
+Mark Sweatman, MPA
+Suzanne Thomas, Ph.D.
+Deborah Wang

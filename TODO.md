@@ -3,18 +3,13 @@ TODO
 ✅Research - 180
 ✅Research - 181
 ❌👤💳Enterprise - 16
-Research - 80
-Research - 170
-extract Research 170
-Research - 171
-extract Research 171
-Research - 173
-extract Research 173
-Enterprise - 14
-extract Enterprise 14
+✅Research - 80
+✅Research - 170
+✅Research - 171
+✅Research - 173
+❌👤💳Enterprise - 14 - make card for Megan Hays (dl'd headshot)
 ✅COM - 1239
 COM - 987
-extract COM 987
 COM - 883
 extract COM 883
 COM - 873

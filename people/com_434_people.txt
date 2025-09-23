@@ -1,0 +1,9 @@
+# People list for COM 434
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://medicine.musc.edu/departments/dom/divisions/endocrinology
+#
+
+Marc-Andre Cornier, M.D.

@@ -1,0 +1,10 @@
+# People list for COM 334
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://medicine.musc.edu/departments/family-medicine/medical-student-education
+#
+
+Sean Haley, M.D.
+Victoria A. Sullivan, M.D.

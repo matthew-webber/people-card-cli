@@ -1,0 +1,11 @@
+# People list for COM 71
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://medicine.musc.edu/education/medical-students/student-affairs/student-council
+#
+
+Sloan Rhodes
+Abigail Martin
+Jenna Vroman

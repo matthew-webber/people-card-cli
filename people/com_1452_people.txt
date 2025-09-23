@@ -1,0 +1,10 @@
+# People list for COM 1452
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://medicine.musc.edu/departments/surgery/education/medical-students
+#
+
+Bernice Huang, M.D.
+Da'Myesha Haynes

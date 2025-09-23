@@ -1,0 +1,73 @@
+# People list for MUSC Giving 67
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://giving.musc.edu/contact/directory
+#
+Thomas Adkins
+Lauren Albenesius
+Jocelyn Aluague
+Stuart Ames
+Morgan Bailey
+Megan Baker
+Wanda Bazemore
+Emma Blitch
+Debbie Bordeau
+Travis Bowens
+Leslie M. Brady
+Jennifer Breen
+Phyllis Caraway
+Catherine Caroe
+Jessica Cash
+Lilia Correa
+Linda Cox
+Jay Crawford
+Whitney Currin
+Justin D'Eredita
+Mimi Dorman
+Kaitlin Epperson
+Lindsay Finneran
+Robyn M. Frampton
+Matthew Fuller
+Shanyia Grant
+Stephanie Greer
+Lori Gwaltney
+Catherine Hanhauser
+Rebecca Harbison
+BJ Harrington
+Beth Heiter
+Stephanie Horn
+Carley Houseman
+Nat Howe
+Samhari Howell
+Katie Hyman
+Kimvithyanet Iv
+Vivian Ivory
+Robby Krick
+Isabelle Livoti
+Darcie Lyon
+Nyja Manigault
+Linda Meehan
+William Meggett
+John Nash
+Stephanie Oberempt
+Christina O'Malley
+Kelly Page
+Brian Panique
+Anna Pappert
+Heather Parrish
+Aishwarya Patel
+Heather Perkins
+Tiffany Reid
+Sylvia Rivers
+Rachel Rizer
+Payton Starmack
+Beth Stuckey
+Dana Taylor
+Wanda Taylor
+Dena Toth
+Melissa Varner
+Neil Veloso
+Renee Walluk
+Jennifer Wilson

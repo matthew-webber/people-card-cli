@@ -1,0 +1,10 @@
+# People list for COM 1829
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://medicine.musc.edu/departments/psychiatry/divisions-and-programs/divisions/addiction-sciences/research/centers/score
+#
+
+Kevin Gray, MD- 
+Aimee McRae-Clark, PharmD, BCPP-

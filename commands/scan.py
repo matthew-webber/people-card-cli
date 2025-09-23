@@ -543,7 +543,7 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
 
           await countdown(0); // resets window.pFound to null and waits for user input
           if (window.pFound === true) {{
-            await new Promise((r) => setTimeout(r, 500)); // waiting for the UI to update...
+            await new Promise((r) => setTimeout(r, 2200)); // waiting for the UI to update...
             person.found = true;
             person.pCardName = getPeopleCardName();
             person.headshotImgString = await getHeadshotImageString();
