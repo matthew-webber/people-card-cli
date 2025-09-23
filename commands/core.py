@@ -229,3 +229,13 @@ def cmd_show(args, state):
     else:
         print(f"❌ Unknown show target: {target}")
         print("Available targets: variables, domains, page, profile")
+
+
+def cmd_debug(args, state):
+    """Toggle debug mode on/off."""
+    from utils.core import set_debug
+
+    current_debug = state.get_variable("DEBUG")
+    new_debug = not current_debug
+    set_debug(new_debug, state)
+    print(f"🐛 Debug mode {'enabled' if new_debug else 'disabled'}")
