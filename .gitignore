@@ -76,3 +76,5 @@ migration_cache*
 # temp files from updating provider profile URLs
 update_provider_profile_urls/*.html
 names*.txt
+
+reports/
