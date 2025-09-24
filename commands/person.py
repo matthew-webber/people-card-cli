@@ -175,17 +175,19 @@ def print_results_table(results: Dict[str, Dict]) -> None:
     print("=" * 80)
 
     # Calculate column widths
-    max_name_width = max(len(name) for name in results.keys())
+    max_name_width = max(
+        (len(name) for name in results.keys()), default=len("❌ Not Found")
+    )
     max_name_width = max(max_name_width, len("Name"))
 
     max_status_width = len("Status")
     max_source_width = max(
-        len(result.get("file_source", ""))
-        for result in results.values()
-        if result.get("file_source")
-    )
-    max_source_width = (
-        max(max_source_width, len("Source")) if max_source_width else len("Source")
+        (
+            len(result.get("file_source", ""))
+            for result in results.values()
+            if result.get("file_source")
+        ),
+        default=len("Source"),
     )
 
     # Header

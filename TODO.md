@@ -9,13 +9,10 @@ TODO
 ✅Research - 173
 ❌👤💳Enterprise - 14 - make card for Megan Hays (dl'd headshot)
 ✅COM - 1239
-COM - 987
-COM - 883
-extract COM 883
-COM - 873
-extract COM 873
+✅COM - 987
+✅COM - 883
+✅COM - 873
 COM - 879
-extract COM 879
 COM - 233
 extract COM 233
 MUSC Giving - 34

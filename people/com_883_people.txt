@@ -1,0 +1,11 @@
+# People list for COM 883
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.medicine.musc.edu/departments/pediatrics/fellowship-programs/emergency-medicine
+#
+
+M. Olivia Titus, M.D.
+Ian Kane, M.D.
+Caroline Ward

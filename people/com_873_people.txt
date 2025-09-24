@@ -1,0 +1,10 @@
+# People list for COM 873
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.medicine.musc.edu/departments/pediatrics/fellowship-programs/critical-care
+#
+
+Rustin Meister, M.D.
+Brian Bridges, M.D.
