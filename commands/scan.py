@@ -15,10 +15,12 @@ import re
 import sys
 import json
 import unicodedata
+import platform
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, unquote
 from typing import List, Tuple, Optional
 
+from bs4 import BeautifulSoup
 import requests
 
 from commands.person import cmd_person
@@ -38,6 +40,46 @@ except ImportError:
     )
     raise
 
+DEFAULT_SOCKS = "socks5h://127.0.0.1:8080"  # change port if needed
+
+# Determine socks URL to use
+env_socks = platform.node() == "ms-Mac-Studio.local"
+use_socks = bool(env_socks)
+
+socks_url = DEFAULT_SOCKS if use_socks else None
+
+# Create a session and control whether system proxies are used
+session = requests.Session()
+
+if socks_url:
+    # Ensure SOCKS support is installed (requests[socks]/PySocks)
+    try:
+        import socks  # type: ignore  # noqa: F401
+    except Exception:
+        print(
+            "⚠️  SOCKS support requires requests[socks] / PySocks. "
+            "Install with: pip install 'requests[socks]' pysocks",
+            file=sys.stderr,
+        )
+
+    # Use proxy-side DNS by keeping 'socks5h' scheme
+    session.trust_env = False  # ignore system proxy vars; use explicit SOCKS only
+    session.proxies.update(
+        {
+            "http": socks_url,
+            "https": socks_url,
+        }
+    )
+
+    # Log a redacted hint about which proxy is used
+    try:
+        parsed = urlparse(socks_url)
+        safe = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
+        print(f"🔌 Using SOCKS proxy (proxy-DNS): {safe}", file=sys.stderr)
+    except Exception:
+        pass
+else:
+    print("ℹ️  Not using any proxy")
 
 PCT_PREFIX = "pct-"
 PCT_PATTERN = re.compile(r"^pct-(\d+)\.xlsx$", re.IGNORECASE)
@@ -965,8 +1007,24 @@ def _download_headshots_for_targets(state, targets):
     page_cache = {}
     for url in existing_urls:
         try:
-            soup, response = get_page_soup(url)
-            page_cache[url] = (soup, response)
+            if url in page_cache:
+                continue
+            print(f"🔍 Fetching {url} ...")
+            page = session.get(url, timeout=5)
+            page.raise_for_status()
+            html = page.text  # let Requests handle decoding
+
+            # Some endpoints (or intermediaries) may percent-encode the HTML (!)
+            if html.lstrip().startswith("%3c") or html.lstrip().lower().startswith(
+                "%3c!doctype"
+            ):
+                try:
+                    html = unquote(html)
+                except Exception:
+                    pass
+
+            soup = BeautifulSoup(html, "html.parser")
+            page_cache[url] = (soup, page)
         except (
             Exception
         ) as exc:  # pragma: no cover - network errors only shown at runtime
@@ -1047,9 +1105,9 @@ def _download_headshots_for_targets(state, targets):
                 continue
 
             try:
-                response = requests.get(src, timeout=30)
-                response.raise_for_status()
-            except requests.RequestException as exc:  # pragma: no cover - network
+                with session.get(src, timeout=5) as response:
+                    response.raise_for_status()
+            except requests.RequestException as exc:
                 print(f"❌ Failed to download image: {exc}")
                 continue
 

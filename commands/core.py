@@ -45,7 +45,10 @@ def _open_file_in_default_app(file_path):
 
 def _open_url_in_browser(url):
     system = platform.system()
-    if system == "Darwin":
+    # if system is Darwin AND hostname is macmini-01, use firefox
+    if system == "Darwin" and platform.node() == "ms-Mac-Studio.local":
+        subprocess.run(["open", "-a", "Firefox", url], check=True)
+    elif system == "Darwin":
         subprocess.run(["open", url], check=True)
     elif system == "Windows":
         subprocess.run(["start", "", url], shell=True, check=True)
