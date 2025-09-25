@@ -1,0 +1,29 @@
+# People list for Hollings Cancer 285
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.hollingscancercenter.musc.edu/about/leadership
+#
+
+Amanda C. LaRue, Ph.D.
+Raymond N. DuBois, M.D., Ph.D.
+William Hawkins, M.D.
+Matthew J. Carpenter, Ph.D.
+Marvella E. Ford, Ph.D.
+Denis C. Guttridge, Ph.D.
+Amanda C. LaRue, Ph.D.
+A. Craig Lockhart, M.D., MHS, FASCO
+Besim Ogretmen, Ph.D.
+Travis Poole, MHA
+Nicholas Shungu, M.D.
+Benjamin Toll, Ph.D.
+David Long, Ph.D.
+Joni Nelson, Ph.D.
+David Marshall, M.D.
+John Kaczmar, M.D.
+Tricia Adrales Bentz, MHA, MHS-HIA
+Katherine Vosburgh, BSN, RN
+Jason Newman, M.D.
+Kristin Mensonides, MHA, MLS, FACHE
+Laura Sample, DHA, MHA, FACHE

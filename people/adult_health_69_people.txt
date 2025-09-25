@@ -1,0 +1,80 @@
+# People list for Adult Health 69
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.muschealth.org/medical-services/psychiatry/services/youth-collaborative/team
+#
+
+Lindsay Squeglia, Ph.D.
+Kevin Gray, M.D.
+Rachel L. Tomko, Ph.D.
+Cori Herring
+Alexis Garcia, Ph.D.
+Kathryn S. Gex, Ph.D.
+Anna Kirkland, Ph.D.
+Pamela L. Ferguson, Ph.D.
+Anne Gutshall, Ph.D.
+Erin A. McClure, Ph.D.
+Brittney Browning, Ph.D.
+Lindsay Meredith-Broussard, Ph.D.
+Nolan Ramer, Ph.D
+Suzanna Donato M.A.
+Maria Perica, M.S.
+Luz Robinson
+Sam Agbeh
+Tirza Alcala
+Blen Asres
+Rodrick Bellamy, M.Ed.
+Sarah Bourne, MPH
+Kevin Branson
+Jessica Burt
+Katie Cole
+Maliyah Forsythe
+Emma Gaskins, M.A.
+Amy Maslin
+Brittany McKenzie, LMSW
+Elizabeth Robertson
+Grant Sineath
+Jon Taylor
+Hannah Vander Wall
+Ela Williams
+Abigail de Arellano, Research Assistant
+Saima Akbar, Research Assistant
+Dominique Black, Research Assistant
+Shamaya Black, Research Assistant
+Brittany Bryant, D.S.W., L.I.S.W.-CP
+Max Cook, Research Assistant
+Chandler Dent, Research Assistant
+Matthew Fadus, M.D., NIH DART Program Resident
+Emma Gourdie, Program Coordinator
+ReJoyce Green, Ph.D., Advanced Analytics Program Lead
+Tobias Holden, Research Assistant
+Dominic Ingram, Research Assistant
+Essence Jennings, Research Assistant
+Daniel Hashemi, M.D., NIH DART Program Resident
+Briana Hunt, Research Assistant
+Sam Kempker-Margherio, Ph.D., Clinical Psychology Intern
+Katie Lastrapes, Program Coordinator
+Jessica Liao, Research Assistant
+Helen Liu, Research Assistant
+Amanda McKay, Research Assistant
+Paola Macias, Research Assistant
+Tyler Malone, Research Assistant
+Anna Maralit, Program Coordinator
+Zach Markiewicz, Entryway Coordinator
+Casie H. Morgan, Ph.D., Clinical Psychology Intern
+Shadaisha Mustapher, Research Assistant
+Jenny Nankoua, Research Assistant
+Anthony Nguyen, DART FLEX Student
+Alicia Parson, Research Assistant
+John Redhead, Research Assistant
+Ren Rountree, Outreach and Education Project Lead
+Danielle Slaggert, Interventional Studies Project Lead
+Claudia Salazar, Research Assistant
+Chrystal Davis, Ph.D., Postdoctoral Fellow 
+Jade Tuttle, MSW, Program Coordinator
+Emilio Valadez, Ph.D., Clinical Psychology Intern
+Taryn Williams, Research Assistant
+Owen Winters, Research Assistant
+Isabel Zimmerman, Research Assistant

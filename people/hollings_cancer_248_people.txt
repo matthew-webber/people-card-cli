@@ -1,0 +1,10 @@
+# People list for Hollings Cancer 248
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.hollingscancercenter.musc.edu/research/education/k12-jr-faculty
+#
+
+John Wrangle, M.D.
+Craig Lockhart, M.D.

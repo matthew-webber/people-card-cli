@@ -1,0 +1,10 @@
+# People list for MUSC Giving 34
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.giving.musc.edu/chp/scholarships
+#
+
+Leslie M. Brady
+Katie Hyman

@@ -1,0 +1,11 @@
+# People list for COM 1711
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.medicine.musc.edu/departments/dom/divisions/gastroenterology/research/labs-and-centers/ddrcc/about
+#
+
+Don C. Rockey, M.D.
+Stephen A. Duncan, DPhil
+Kyu-Ho Lee, M.D., Ph.D.

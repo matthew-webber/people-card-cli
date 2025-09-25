@@ -1,0 +1,11 @@
+# People list for COM 1662
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.medicine.musc.edu/departments/dom/divisions/internal-medicine/research/chdr/our-team
+#
+
+William Moran, M.D.
+Dawn Dericke, RN, BSN, CCRC
+Caroline Wallinger, RN, BSN

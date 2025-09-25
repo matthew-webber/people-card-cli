@@ -1,0 +1,10 @@
+# People list for COP 19
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.pharmacy.musc.edu/academic-programs/pharmaceutical-industry-fellowships/skinceuticals-msl-fellowship
+#
+
+Shelby Kolo, Pharm.D.
+Crystal Yu, Pharm.D.
