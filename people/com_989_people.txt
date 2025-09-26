@@ -1,0 +1,9 @@
+# People list for COM 989
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.medicine.musc.edu/departments/psychiatry/about/leadership/about-the-chair
+#
+
+Kevin M. Gray, M.D.

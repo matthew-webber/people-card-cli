@@ -1,0 +1,9 @@
+# People list for COM 2049
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.medicine.musc.edu/departments/neuroscience/training/nida-t32-grant
+#
+
+Jacqueline F. McGinty, Ph.D.

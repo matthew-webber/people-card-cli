@@ -1,0 +1,10 @@
+# People list for Research 179
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.research.musc.edu/resources/sctr/funding-opportunities/clinical-trialist
+#
+
+Andrew Goodwin, M.D., MSCR
+Diana Lee-Chavarria, MA

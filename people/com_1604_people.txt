@@ -1,0 +1,14 @@
+# People list for COM 1604
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.medicine.musc.edu/about/contact/dean
+#
+
+Terrence E. "Terry" Steyer, M.D.
+Jennifer Nall
+Anita Harrell Messner
+Allison R. Leggett
+Sara Jantzen
+Amy T. Solomon

@@ -1,0 +1,23 @@
+# People list for Enterprise 15
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.web.musc.edu/about/leadership/organizational-leadership/presidents-council
+#
+
+David J. Cole, M.D., FACS
+Stuart Ames
+Stewart Mixon, MA
+Patrick J. Cawley, M.D.
+Michael A. deArellano, Ph.D.
+Annette R. Drachman, MHA, JD
+Jonathan Edwards, M.D., MBA
+Jesse Goodwin, Ph.D.
+Eugene S. Hong, M.D.
+Timothy Stemmler, Ph.D.
+Terrence E. Steyer, M.D.
+Mark Sweatman, MPA
+Suzanne Thomas, Ph.D.
+Dawn Hartsell, MBA
+Katherine Haltiwanger
