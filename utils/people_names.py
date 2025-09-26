@@ -2,6 +2,8 @@ import os
 import re
 from typing import List, Optional, Tuple
 
+from utils.core import debug_print
+
 
 def load_extracted_people_names(path: str) -> List[str]:
     """Load names from an extracted people list file, ignoring comments."""
@@ -25,6 +27,7 @@ def load_extracted_people_names(path: str) -> List[str]:
 
 def get_name_before_comma(name: str) -> str:
     """Extract the part of the name before any comma (for credentials)."""
+
     return name.split(",", 1)[0].strip()
 
 
@@ -33,7 +36,10 @@ def tokenize_name(name: str) -> Tuple[str, Optional[str], str]:
     quote_replaced_name = name.replace("“", '"').replace("”", '"')
     cleaned = re.sub(r"""[^"\w\s\-\.' ]""", " ", quote_replaced_name)
     cleaned = re.sub(
-        r"\b(Jr|Sr|II|III|IV|V|MD|PhD|Esq)\.?\s*$", "", cleaned, flags=re.IGNORECASE
+        r"\b(Jr\.?|Sr\.?|II|III|IV|V|M\.?D\.?|Ph\.?D\.?|Esq\.?|B\.?A\.?|B\.?S\.?|M\.?H\.?A\.?|M\.?A\.?|M\.?S\.?|M\.?B\.?A\.?|J\.?D\.?|Ed\.?D\.?|Psy\.?D\.?|D\.?D\.?S\.?|D\.?V\.?M\.?|R\.?N\.?|C\.?P\.?A\.?|P\.?E\.?)\.?\s*$",
+        "",
+        cleaned,
+        # flags=re.IGNORECASE,
     )
     parts = [p for p in re.split(r"\s+", cleaned.strip()) if p]
     if len(parts) < 2:

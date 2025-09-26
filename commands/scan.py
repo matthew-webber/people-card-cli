@@ -19,6 +19,7 @@ import platform
 from pathlib import Path
 from urllib.parse import urljoin, urlparse, unquote
 from typing import List, Tuple, Optional
+from utils.core import debug_print
 
 from bs4 import BeautifulSoup
 import requests
@@ -220,9 +221,10 @@ def _card_finder_js(names: List[Tuple[str, str]]) -> str:
       console.log('1. Set window.pFound = true in the console to grab the headshot string.');
       console.log('2. If person not found, set window.pFound = false to skip.');
       console.log('3. If nothing happens after 30s, the script will continue automatically.');
-      while (window.pFound === null && num_waits < 10) {{
+      const waitCycles = 20;
+      while (window.pFound === null && num_waits < waitCycles) {{
         if (window.nameSearchingFor) {{
-          console.log(`Waiting... (target: ${{window.nameSearchingFor}})`);
+          console.log(`Moving on in ${{(waitCycles - num_waits) * 3}} seconds... \nName: ${{window.nameSearchingFor}}`);
         }} else {{
           console.log('Waiting...');
         }}
