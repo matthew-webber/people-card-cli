@@ -1,0 +1,10 @@
+# People list for Research 206
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.research.musc.edu/resources/sctr/research-resources/covid-19-biorepository
+#
+
+Amy Gandy
+Patrick Flume, M.D.
