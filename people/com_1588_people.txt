@@ -1,0 +1,9 @@
+# People list for COM 1588
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.medicine.musc.edu/about/leadership
+#
+
+Terrence Steyer, MD

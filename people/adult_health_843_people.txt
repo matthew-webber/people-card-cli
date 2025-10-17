@@ -1,0 +1,11 @@
+# People list for Adult Health 843
+# Paste the names of people found on this page below.
+# One name per line.
+# Lines starting with # are ignored.
+#
+# Page: https://dev.muschealth.org/health-professionals/education/pharmacy/our-programs/pgy-2-thrombosis-and-hemostasis-residency
+#
+
+Agnes Musyoka, PharmD
+Krista McElray, PharmD, BCPS
+Joe Mazur, PharmD, BCPS, BCCCP

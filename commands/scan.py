@@ -18,7 +18,7 @@ import unicodedata
 import platform
 from pathlib import Path
 from urllib.parse import urljoin, urlparse, unquote
-from typing import List, Tuple, Optional
+from typing import Iterable, List, Tuple, Optional
 from utils.core import debug_print
 
 from bs4 import BeautifulSoup
@@ -123,6 +123,30 @@ def _is_placeholder_headshot(headshot: Optional[str]) -> bool:
         or "target" in needle
         or "placeholder" in needle
     )
+
+
+def _append_todo_items(items: Iterable[str]) -> None:
+    """Append unique TODO checklist items to TODO.md without duplicating existing lines."""
+    todo_path = Path("TODO.md")
+    existing_content = ""
+    if todo_path.exists():
+        try:
+            existing_content = todo_path.read_text(encoding="utf-8")
+        except OSError:
+            return
+    existing_lines = set(existing_content.splitlines())
+    pending = [line for line in items if line and line not in existing_lines]
+    if not pending:
+        return
+    needs_leading_newline = bool(existing_content) and not existing_content.endswith("\n")
+    try:
+        with todo_path.open("a", encoding="utf-8") as fh:
+            if needs_leading_newline:
+                fh.write("\n")
+            for line in pending:
+                fh.write(f"{line}\n")
+    except OSError:
+        return
 
 
 def _load_column_a_as_keys(xlsx_path: str) -> pd.Series:
@@ -761,12 +785,18 @@ def cmd_scan(args, state=None):
                     print(
                         "The following people have placeholder headshots (Headshots/P/p_placeholder):"
                     )
+                    todo_entries = []
                     for entry in placeholders:
                         name = entry.get("name_display") or "Unknown"
                         print(f"  - {name}")
+                        details = f"{name} has placeholder headshot"
+                        todo_entries.append(f"- [ ] Update headshot: _{details}_")
                     print(
                         "Please update these headshots in Sitecore before finalizing the export."
                     )
+                    if todo_entries:
+                        _append_todo_items(todo_entries)
+                        print("🗒️  Logged TODO items to TODO.md")
         except Exception:
             # Don't let this best-effort summary interfere with command completion
             pass
@@ -1088,6 +1118,8 @@ def _download_headshots_for_targets(state, targets):
 
         filename_stem = pct_keys[0] if pct_keys else slugify_name(first, last)
         filename_stem = filename_stem or slugify_name(first, last)
+        if not filename_stem.endswith("_SC"):
+            filename_stem = f"{filename_stem}_SC"
 
         for match in matches:
             src = match["src"]
